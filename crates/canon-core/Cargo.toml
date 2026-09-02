@@ -1,0 +1,12 @@
+[package]
+name = "canon-core"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

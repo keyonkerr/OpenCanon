@@ -1,0 +1,20 @@
+[package]
+name = "opencanon"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+canon-core = { path = "../canon-core" }
+canon-store = { path = "../canon-store" }
+chrono = "0.4"
+clap = { version = "4.5", features = ["derive"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = "2"
+canon-core = { path = "../canon-core" }
+canon-store = { path = "../canon-store" }
+serde_json = { workspace = true }
+tempfile = "3"
