@@ -14,15 +14,17 @@ compatibility: Requires the `opencanon` CLI.
 
 ## 1. 召回
 
-从用户问题抽会写在原子 `body` 里的词（专名、机制、约束）；问题里若出现原子 id，把 id 也并进 keywords。调用：
+读 `opencanon/config.yaml` 的 `locales`（没有则视为未勾选额外语言）。从用户问题扩关键词：英语（源码默认，不能少）∪ `locales` 下读者会用来提问的中心词 ∪ 问题里已有的词。问题里若出现原子 id，把 id 也并进 keywords。调用：
 
 ```
 opencanon query <keyword>...
 ```
 
-默认只扫 active。不要加 `--all`。命中按 `id` 去重。argv 过长则分批 `query`，再按 id 合并。
+默认只扫 active。不要加 `--all`。命中按 `id` 去重。argv 过长则分批 `query`，再按 id 合并。`query` 对 `id` / `title` / `tags` / `body` 做子串 OR。
 
-完成：有一份命中列表（可为空）。零命中则停止，告诉用户库中没有相关真源，不编文。
+零命中：按英语 + `locales` 再扩一轮同义词后重 query。仍零则停止，告诉用户库中没有相关真源，不编文。不要改去 `list` 全库。
+
+完成：有一份命中列表（可为空）。零命中则停止，不编文。
 
 ## 2. 取材
 

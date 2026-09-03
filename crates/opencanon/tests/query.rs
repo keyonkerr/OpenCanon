@@ -77,12 +77,23 @@ fn default_excludes_draft_even_when_body_matches() {
 }
 
 #[test]
-fn tag_only_does_not_match() {
+fn title_substring_matches() {
     let dir = tempdir().unwrap();
     seed_active_and_draft(dir.path());
-    let output = run(dir.path(), &["query", "--all", "armybreak"]);
+    let output = run(dir.path(), &["query", "实现表"]);
     let data = assert_ok(&output, "query");
-    assert_eq!(data["count"], 0);
+    assert_eq!(data["count"], 1);
+    assert_eq!(data["atoms"][0]["id"], SECOND_ID);
+}
+
+#[test]
+fn tag_substring_matches() {
+    let dir = tempdir().unwrap();
+    seed_active_and_draft(dir.path());
+    let output = run(dir.path(), &["query", "armybreak"]);
+    let data = assert_ok(&output, "query");
+    assert_eq!(data["count"], 1);
+    assert_eq!(data["atoms"][0]["id"], SECOND_ID);
 }
 
 #[test]

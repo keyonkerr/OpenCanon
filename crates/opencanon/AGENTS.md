@@ -13,6 +13,7 @@
 | `error.code` 映射 | 只改 `map_error.rs`。agent 按 `code` 分支，`message` 不稳定 |
 | `--version` / `help` | 成功时无信封；clap 用法错误退出码 2、stderr、无信封 |
 | `list` / `query` 状态 argv | 省略 = active；`--status` 取 draft、active 或 deprecated；`--all`；二者互斥。不要 `--status all`，不要 `--include-draft` |
+| `init` | 无 argv。无 TTY 时退出码 2、stderr、无信封。成功时走信封。 |
 
 契约真源是本 crate 的 serde 返回类型加命令级测试，不另维护 JSON Schema。skill 不抄字段表。
 

@@ -2,10 +2,10 @@ use crate::model::Atom;
 use crate::ops::{filter_atoms, ListFilter};
 use crate::Error;
 
-/// Filter by [`ListFilter`], then keep atoms whose `body` or `id` contains
-/// any keyword (trim + case-fold substring).
+/// Filter by [`ListFilter`], then keep atoms whose `id`, `title`, `tags`, or
+/// `body` contains any keyword (trim + case-fold substring).
 ///
-/// `title` and `tags` do not participate. Input order is preserved.
+/// Input order is preserved.
 pub fn query(
     atoms: Vec<Atom>,
     keywords: &[String],
@@ -42,7 +42,10 @@ fn needles(keywords: &[String]) -> Result<Vec<String>, Error> {
 }
 
 fn matches_keyword(atom: &Atom, needles: &[String]) -> bool {
-    contains_any(&atom.body, needles) || contains_any(&atom.id, needles)
+    contains_any(&atom.id, needles)
+        || contains_any(&atom.title, needles)
+        || atom.tags.iter().any(|tag| contains_any(tag, needles))
+        || contains_any(&atom.body, needles)
 }
 
 fn contains_any(haystack: &str, needles: &[String]) -> bool {
@@ -101,16 +104,16 @@ mod tests {
                 "title_only",
                 Status::Active,
                 "耐久只在标题",
-                &["durability"],
+                &["unrelated"],
                 "这条正文完全不提那个词。",
             ),
         ]
     }
 
     #[test]
-    fn default_is_active_body_only() {
+    fn default_is_active_and_matches_title_or_body() {
         let hits = query(sample(), &["耐久".into()], ListFilter::Active).unwrap();
-        assert_eq!(ids(&hits), vec!["durability_daily_restore"]);
+        assert_eq!(ids(&hits), vec!["durability_daily_restore", "title_only"]);
     }
 
     #[test]
@@ -138,15 +141,15 @@ mod tests {
     }
 
     #[test]
-    fn title_only_does_not_match() {
+    fn title_substring_matches() {
         let hits = query(sample(), &["只在标题".into()], ListFilter::Active).unwrap();
-        assert!(hits.is_empty());
+        assert_eq!(ids(&hits), vec!["title_only"]);
     }
 
     #[test]
-    fn tag_only_does_not_match() {
+    fn tag_substring_matches() {
         let hits = query(sample(), &["armybreak".into()], ListFilter::All).unwrap();
-        assert!(hits.is_empty());
+        assert_eq!(ids(&hits), vec!["durability_daily_restore"]);
     }
 
     #[test]

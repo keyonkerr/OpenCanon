@@ -2,7 +2,7 @@
 
 agent 的执行规格，编排的唯一位置。改流程只改本目录；改校验、落盘、信封只改 crate。Rust 不读取这些文件。
 
-本目录随产品仓发布，不复制进使用方 `opencanon/`。
+本目录随产品仓发布，不复制进使用方 `opencanon/`。`opencanon init` 把本目录下带 `SKILL.md` 的子目录按同名覆盖安装到 cwd 的 `.agents/skills/`，不删除该处其它 skill。
 
 ## 写一条 skill
 

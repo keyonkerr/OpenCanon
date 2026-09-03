@@ -4,6 +4,7 @@ mod error;
 mod io;
 mod layout;
 mod serialize;
+mod serialize_config;
 mod serialize_doc;
 
 pub use error::Error;

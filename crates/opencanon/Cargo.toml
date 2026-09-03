@@ -9,6 +9,8 @@ canon-core = { path = "../canon-core" }
 canon-store = { path = "../canon-store" }
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
+dialoguer = "0.11"
+include_dir = "0.7"
 serde = { workspace = true }
 serde_json = { workspace = true }
 

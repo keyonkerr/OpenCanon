@@ -5,6 +5,7 @@ use tempfile::tempdir;
 
 const HELP: &str = "\
 opencanon --version
+opencanon init
 opencanon add                                          # stdin: JSON array of {slug, title, body, tags?, freshness?}
 opencanon get <id>
 opencanon list [--status draft|active|deprecated] [--all]

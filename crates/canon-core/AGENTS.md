@@ -19,7 +19,7 @@
 - slug 形状见 `model/slug.rs`：非空；1–32；允许 `_` 作词分隔；首尾不可空白、`.`、`_`；不含 `<>:"/\|?*`。英文蛇形是调用面默认，写在 skill，core 不强制 ASCII-only。
 - 全状态占用同一 slug 则 `Error::SlugConflict`（一次带全量冲突）。无 `ATOM-` 前缀。
 - `list` 与 `query` 共用 `ListFilter`：默认 / `Active` = 只真源；`Status(x)` = 只该状态；`All` = 三种都在。`query` 不再自写语料过滤。
-- `query` 命中：keyword 对 `body` 或 `id` 做大小写折叠子串。`title` / `tags` 不参与。
+- `query` 命中：keyword 对 `id` / `title` / `tags` / `body` 做大小写折叠子串。任一场命中即入选。
 - 只有 `status == active` 是真源。draft / deprecated 与真源同目录，靠 `ops` 过滤，不靠分子目录。
 - Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`freshness.impl-path` 指向活实现，不把源文档或代码拷进原子。
 - `Deprecated` 回真源：删除占用该 slug 的文件后重新 `add` 走审。不提供回流。

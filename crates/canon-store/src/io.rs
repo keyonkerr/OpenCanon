@@ -5,8 +5,11 @@ use std::path::{Path, PathBuf};
 
 use canon_core::{Atom, ComposedDoc};
 
-use crate::layout::{atom_id_from_filename, atom_path, atoms_dir, doc_path, docs_dir};
+use crate::layout::{
+    atom_id_from_filename, atom_path, atoms_dir, config_path, doc_path, docs_dir, namespace_dir,
+};
 use crate::serialize;
+use crate::serialize_config;
 use crate::serialize_doc;
 use crate::Error;
 
@@ -103,6 +106,28 @@ impl Store {
         Ok(atoms)
     }
 
+    pub fn init_namespace(&self) -> Result<(), Error> {
+        fs::create_dir_all(atoms_dir(&self.root))?;
+        Ok(())
+    }
+
+    pub fn write_config(&self, locales: &[String]) -> Result<(), Error> {
+        let dir = namespace_dir(&self.root);
+        fs::create_dir_all(&dir)?;
+        let dest = config_path(&self.root);
+        let tmp = dir.join(".config.yaml.tmp");
+        let rendered = serialize_config::to_yaml(locales);
+
+        {
+            let mut file = File::create(&tmp)?;
+            file.write_all(rendered.as_bytes())?;
+            file.sync_all()?;
+        }
+
+        replace_file(&tmp, &dest)?;
+        Ok(())
+    }
+
     pub fn write_doc(&self, doc: &ComposedDoc) -> Result<(), Error> {
         let dir = docs_dir(&self.root);
         fs::create_dir_all(&dir)?;
@@ -162,7 +187,7 @@ mod tests {
     use canon_core::{Atom, Freshness, Status};
 
     use super::Store;
-    use crate::layout::{atoms_dir, namespace_dir};
+    use crate::layout::{atoms_dir, config_path, docs_dir, namespace_dir};
 
     fn sample(id: &str, status: Status) -> Atom {
         Atom {
@@ -242,6 +267,30 @@ mod tests {
             other => panic!("unexpected {other:?}"),
         }
         assert!(!namespace_dir(dir.path()).exists());
+    }
+
+    #[test]
+    fn init_namespace_creates_atoms_not_docs() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path());
+        store.init_namespace().unwrap();
+        assert!(atoms_dir(dir.path()).is_dir());
+        assert!(!docs_dir(dir.path()).exists());
+    }
+
+    #[test]
+    fn write_config_roundtrips_locales_and_skips_docs() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path());
+        store.write_config(&["en".into(), "ja".into()]).unwrap();
+        let raw = std::fs::read_to_string(config_path(dir.path())).unwrap();
+        assert_eq!(raw, "locales:\n  - en\n  - ja\n");
+        assert!(!atoms_dir(dir.path()).exists());
+        assert!(!docs_dir(dir.path()).exists());
+
+        store.write_config(&[]).unwrap();
+        let raw = std::fs::read_to_string(config_path(dir.path())).unwrap();
+        assert_eq!(raw, "{}\n");
     }
 
     #[test]

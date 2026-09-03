@@ -6,6 +6,7 @@ mod now;
 mod stdin;
 
 use std::ffi::OsString;
+use std::io::IsTerminal;
 use std::str::FromStr;
 
 use canon_core::ops::ListFilter;
@@ -18,6 +19,7 @@ use crate::error::CliError;
 
 const HELP_TEXT: &str = "\
 opencanon --version
+opencanon init
 opencanon add                                          # stdin: JSON array of {slug, title, body, tags?, freshness?}
 opencanon get <id>
 opencanon list [--status draft|active|deprecated] [--all]
@@ -46,6 +48,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Add,
+    Init,
     Get {
         id: String,
     },
@@ -122,6 +125,10 @@ where
     }
 
     let command_name = command_name(&command);
+    if matches!(command, Commands::Init) && !std::io::stdin().is_terminal() {
+        eprintln!("opencanon init requires an interactive terminal");
+        return 2;
+    }
     match dispatch(command) {
         Ok(data) => {
             envelope::write_ok(command_name, data);
@@ -137,6 +144,7 @@ where
 fn command_name(command: &Commands) -> &'static str {
     match command {
         Commands::Add => "add",
+        Commands::Init => "init",
         Commands::Get { .. } => "get",
         Commands::List { .. } => "list",
         Commands::Edit => "edit",
@@ -155,6 +163,7 @@ fn dispatch(command: Commands) -> Result<Value, CliError> {
     let store = Store::open(cwd);
     match command {
         Commands::Add => commands::add(&store),
+        Commands::Init => commands::init(&store),
         Commands::Get { id } => commands::get(&store, &id),
         Commands::List { status, all } => commands::list(&store, list_filter(status, all)),
         Commands::Edit => commands::edit(&store),

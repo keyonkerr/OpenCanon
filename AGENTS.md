@@ -2,7 +2,7 @@
 
 确定性文档原子库。agent 驱动并调用 LLM；本仓 Rust 只做校验、流转、落盘与确定性计算。
 
-产品树（本仓）与真源树不是同一棵。真源是被治理项目 cwd 下 `opencanon/atoms/` 里 `status: active` 的文件。`skills/` 只随产品发布，不写入使用方数据目录。
+产品树（本仓）与真源树不是同一棵。真源是被治理项目 cwd 下 `opencanon/atoms/` 里 `status: active` 的文件。`skills/` 只随产品发布，不写入使用方 `opencanon/`；`init` 按同名覆盖安装到 `.agents/skills/`。
 
 ## 改哪里
 

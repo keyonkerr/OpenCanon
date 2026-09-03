@@ -20,6 +20,10 @@ pub fn doc_path(root: &Path, id: &str) -> PathBuf {
     docs_dir(root).join(format!("{id}.md"))
 }
 
+pub fn config_path(root: &Path) -> PathBuf {
+    namespace_dir(root).join("config.yaml")
+}
+
 pub fn atom_id_from_filename(name: &str) -> Option<String> {
     if name.starts_with('.') {
         return None;

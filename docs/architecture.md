@@ -34,7 +34,7 @@ docs/       人/agent 读的说明（kebab-case）
 - **真源树**回答：事实存在哪、谁可以写、什么算真源。全部托管数据收在 `opencanon/` 下，避免 `atoms/`、`docs/` 直接铺在使用方仓库根上。
 - 真源树不进产品仓。产品仓忽略根上的 `/opencanon/`，避免在工具仓里跑命令得到套娃路径 `opencanon/opencanon/atoms/`。
 - `opencanon` 打开的 `root` 永远是进程当前工作目录，没有 `--root`。原子路径由 store 拼为 `root/opencanon/atoms/<id>.md`。
-- `skills/` 只在产品树：随 CLI 发布，不复制进使用方 `opencanon/`。
+- `skills/` 只在产品树：随 CLI 发布，不复制进使用方 `opencanon/`。`init` 把产品 skill 按同名覆盖安装到 cwd 下 `.agents/skills/`。
 - 源文档（被拆的旧 md）在两棵树之外：命令面不读、不写；agent 用自身读文件能力取全文。
 - `docs/` 文件一律 kebab-case，不加 `doc-` 前缀（已在目录里）。当前：架构 `architecture.md`，痛点与思路 `why.md`；决策需要独立演进时再落到 `adr/<nnnn>-<title>.md`。命令与信封以 `crates/opencanon/AGENTS.md` 与 serde 类型为准，不另开契约副本。
 
@@ -174,7 +174,7 @@ crates/opencanon/src/
 | 组 | 命令 | 职责 |
 |----|------|------|
 | 元 | `--version` `help` | 进程身份与用法 |
-| 命名空间 | `init` | 显式创建使用方 `opencanon/`（含 `atoms/`） |
+| 命名空间 | `init` | 无参数；TTY 多选文档语言；建 `opencanon/`（含 `atoms/` 与 `config.yaml`）；按同名覆盖安装 skill 到 `.agents/skills/` |
 | CRUD | `add` `get` `list` `edit` `delete` | 原子存取 |
 | 生命周期 | `active` `deprecate` | 状态流转 |
 | 派生文档 | `compose` | 校验引用并写入 `opencanon/docs/` |
@@ -202,7 +202,9 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 
 ```
 <root>/                            # 进程 cwd（被治理项目根）
+├── .agents/skills/                # init 按同名覆盖安装的产品 skill；其它 skill 保留
 └── opencanon/                     # OpenCanon 唯一托管区
+    ├── config.yaml                # init 写入；`locales` 为勾选的 BCP-47（勾了英语则含 en）
     ├── atoms/
     │   └── <id>.md                # 一原子一文件；文件名 = id
     └── docs/                      # 派生可读文档，供 compose 写入
@@ -211,11 +213,12 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 | 目录 | 作用 | 谁写 |
 |------|------|------|
 | `opencanon/` | 使用方侧本工具的全部数据 | `canon-store` |
+| `opencanon/config.yaml` | 文档语言等项目配置 | `init` 经 store |
 | `opencanon/atoms/` | 全部原子，含 draft / active / deprecated | 仅 `canon-store` |
 | `opencanon/atoms/*.md` | frontmatter + 正文 | 同上 |
 | `opencanon/docs/` | 派生可读文档 | store 经 `compose` |
 
-`opencanon/atoms/` 不存在时，读命令当空或未找到，不创建目录。第一次成功写入原子才创建。第一次成功 `compose` 才创建 `opencanon/docs/`。`init` 可预先建出命名空间（含 `atoms/`），但不把 `skills/` 写进使用方数据目录。
+`opencanon/atoms/` 不存在时，读命令当空或未找到，不创建目录。第一次成功写入原子才创建。第一次成功 `compose` 才创建 `opencanon/docs/`。`init` 预先建出命名空间（含 `atoms/` 与 `config.yaml`），并把产品 skill 按同名覆盖复制到 `.agents/skills/`，不把 `skills/` 写进 `opencanon/`。
 
 文件内容 = YAML frontmatter + 正文。正文是 `body`，不进 frontmatter。键 kebab-case，顺序固定：`id` → `status` → `title` → `tags` → `freshness`。`freshness` 始终出现；其子键有则写、无则省略；三个都没有时为空对象。
 
@@ -232,7 +235,7 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 | `id` | 等于 `add` 时的 `slug`；之后永不变（改 `title` 也不改） |
 | `status` | `draft` / `active` / `deprecated`；只有 `active` 是真源 |
 | `title` | 一句话概括该事实；与 `body` 均非空 |
-| `tags` | 分类；`query` 不扫 tags（按 tag 收窄留给 `list --tag`） |
+| `tags` | 分类；`query` 对 tags 做子串匹配（与 id / title / body 相同） |
 | `freshness` | `last-verified`（上次确认仍成立的本地时间）、`impl-path`（对照实现相对路径）、`score`（机器粗分）；皆可缺省 |
 | `body` | 单事实正文，自包含 |
 
@@ -271,7 +274,7 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 
 合法流转仅 `Draft → Active`、`Active → Deprecated`。其余由 `lifecycle` 判为非法流转。`Deprecated` 回真源：重新 `add` 走审，不提供回流。
 
-消费类能力（组合、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `body` 与 `id` 做子串召回，命中返回完整原子。`compose` 只接受 `atoms` 均为 active 的派生文档。
+消费类能力（组合、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `id`、`title`、`tags` 与 `body` 做子串召回，命中返回完整原子。`compose` 只接受 `atoms` 均为 active 的派生文档。
 
 ---
 
@@ -292,7 +295,7 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 1. 人指定源文档；agent 自读全文（命令面不碰源文件；结束后在主张段末加真源链接）。
 2. agent 调 LLM 拆成候选单事实（先不落盘）。
-3. `query --all` 宽召回（body 抽词 ∪ 候选 slug）；LLM 判是否同一事实，不准才问人。同则复用，不新建。
+3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；LLM 判是否同一事实，不准才问人。同则复用，不新建。
 4. 提问工具对将要新建的候选判定：真实 / 不确定 / 非真实。非真实不创建。复用且现有正文缺细节时再问是否 `edit`。
 5. 新建的按 skill 模板 `add` 为 draft；真实的再 `active`。复用的不 `add`；确认补充则 `edit`。工具不记录与源文档的血缘。
 
@@ -308,7 +311,7 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 用 active 原子回答用户的问题，整理成可读文档。LLM 可调语序、写摘要，不得改变真源语义；每段末尾引用原子。无需人审。
 
-1. `query`（默认 active）召回相关原子；agent 丢掉不回答该问的命中。
+1. 读 `locales`，按英语 ∪ locales 从问题扩词后 `query`（默认 active）；agent 丢掉不回答该问的命中。零命中可再扩一轮同义词；仍零则不编文。
 2. LLM 成文。用户要求落盘时 `compose` 校验引用并写入 `opencanon/docs/`；结果不写回原子正文。别处若要出现该文，只放指向 `opencanon/docs/` 的链接。
 
 ### 7.4 新鲜度（`skills/freshness.md`）
@@ -357,7 +360,7 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 新状态 | 只改 `lifecycle`，再决定是否加命令 | 在多个 `commands/` 里写流转 |
 | 确定性算法 | `compute/` 新模块 + 对应命令 | 把算法写进 store |
 | 下线 | `deprecate` 命令调已有 `transition`；skill `dedup.md` | 改 activate 兼做下线 |
-| 命名空间引导 | `init` + store 建 `opencanon/` | 让 `add` 去建 `docs/`；不要把 `skills/` 写进使用方数据目录 |
+| 命名空间引导 | `init` + store 建 `opencanon/` 与 `config.yaml`；按同名覆盖复制 skill 到 `.agents/skills/` | 让 `add` 去建 `docs/`；把 `skills/` 写进 `opencanon/`；清空整个 `.agents/skills/` |
 | 组合文档 | layout 加 `docs/`；`ops` 的 compose；store `write_doc`；skill `opencanon-compose` | 把组合结果写回原子正文；`compute/compose.rs`；`topics/` |
 | MCP / HTTP | 新 crate，依赖 core + store | 把 clap 逻辑拷一份 |
 | 第二存储 | 此时才抽仓储 trait；文件系统与另一实现两个适配器 | 预先加空端口层 |

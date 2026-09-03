@@ -4,6 +4,7 @@ mod compose;
 mod delete;
 mod edit;
 mod get;
+mod init;
 mod list;
 mod query;
 
@@ -24,6 +25,10 @@ pub fn get(store: &Store, id: &str) -> Result<Value, CliError> {
 
 pub fn list(store: &Store, filter: ListFilter) -> Result<Value, CliError> {
     list::run(store, filter)
+}
+
+pub fn init(store: &Store) -> Result<Value, CliError> {
+    init::run(store)
 }
 
 pub fn query(store: &Store, keywords: &[String], filter: ListFilter) -> Result<Value, CliError> {

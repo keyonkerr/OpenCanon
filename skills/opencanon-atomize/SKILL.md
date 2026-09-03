@@ -14,7 +14,7 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 ## 1. 按原文抽出候选
 
-只在本次会话里拆。先不组命令 JSON，也不把候选、关键字、命中或判定写成文件。本步允许暂时过细；跨节合并在步骤 2。
+只在本次会话里拆。先不组命令 JSON，也不把候选、关键字、命中或判定写成文件。本步允许暂时过细；跨节合并在步骤 2。只使用本篇已覆盖的片段；人指定的若是摘要，真源也只含摘要宽度。更细文档以后原子化时走判同 + `edit`，不要本篇发明细节。
 
 一条**候选**是一处要单独维护、单独引用、单独判新鲜度的**领域主张**（机制、规则、命令契约、设计决策）。主张是一个设计问题的完整回答，含必要落地，不是可单独赋真值的子句，也不是表的一行。人审问的是陈述是否成立，不是是否值得入库、是否过细；大纲复述字面上为真，子句碎片也会被标真实。所以这一步要把骨架和主张分开。
 
@@ -60,7 +60,7 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 通写后做**删句**：任一句子删去后，本条必须少一个独立约束或因果环节；否则该句是复述，删掉。同一理由只写一次。痛点句只作为本条机制的因为所以，通写落到「故…」后的约束。同一编号痛点的不同症状可以分给不同机制，每条只带支撑自己结论的那一截。
 
-主 tag 取读者会用来提问的中心词（如 `查重`、`拼接`、`迁移`、`SSOT`），一条一个。
+主 tag 取读者会用来提问的中心词（如 `查重`、`拼接`、`迁移`、`SSOT`），一条一个。该词（或源里已有的同义说法）必须出现在 `title` 或 `body` 中，语言随 `opencanon/config.yaml` 的 `locales`（英语中心词始终可出现在 slug / 英文别名里）。
 
 然后按类型找实现：机制 / 规则 / 命令类在被治理项目里查找。写入 `freshness.impl-path` 当且仅当该路径的实现覆盖 `body` 里每一条机制约束（相对项目根，指向代码或配表，不指向源文档）。覆盖不全：先收窄 `body` 使与现状同宽，或省略 `impl-path`、保持为决策主张。无实现：省略 `impl-path`。问题 / 市场 / 调研类不填。
 
@@ -70,12 +70,12 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 2. 未决项已在它所修饰的机制里；同一陈述只出现在一条。职责清单条只含原则与互斥边界；各机制的动词、约束、未决在机制条。
 3. 每条 `body` 通过删句（仍能指出覆盖的源位置）；痛点已落到「故」后的约束；`title` 与之一致；`slug` 合法且本批互不相同。收束句没有两条同写。调研快照含可核对时点。
 4. 机制 / 规则 / 命令类：已查找实现。`impl-path` 仅在实现覆盖 `body` 全部机制约束时填写；覆盖不全则已收窄 `body` 或已省略 path；无实现则省略。问题 / 市场 / 调研类无 `impl-path`。
-5. 每条一个主 tag，取该主张被查时的中心词。
+5. 每条一个主 tag，取该主张被查时的中心词；该词或源里同义说法已出现在 `title` 或 `body`。
 6. 已套过 split.md 的合稿例与通写例（含清单与机制、删句、调研时点、收束句、迁移手续并入、痛点落到故）。
 
 ## 3. 召回并判是否同一事实
 
-按 [references/query.md](references/query.md) 抽词、把候选 slug 并进 keywords、调用 `query --all`、判同。命中按 id 去重。slug 与某 hit 的 id 相同仍要判同。本步不写盘。
+按 [references/query.md](references/query.md) 读 `locales`、扩英语与 locale 关键词、把候选 slug 并进 keywords、调用 `query --all`、判同。命中按 id 去重。slug 与某 hit 的 id 相同仍要判同。本步不写盘。
 
 完成：每条候选都是 `same <id>`、`different` 或 `unsure`。
 
