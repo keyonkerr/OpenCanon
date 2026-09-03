@@ -20,7 +20,7 @@ body 抽词 ∪ 本批每条候选的 `slug`，去重，得到一份 `keywords`�
 
 ## 调用 query
 
-每个 keyword 是一个位置参数，空格分开。多词 **OR**：任一词作为子串出现在某原子 `body`，**或**与某原子 `id` 折叠后全等，即命中。没有 `--keyword` 旗标，不走 stdin。
+每个 keyword 是一个位置参数，空格分开。多词 **OR**：任一词作为子串出现在某原子 `body` 或 `id`，即命中。没有 `--keyword` 旗标，不走 stdin。
 
 ```
 opencanon query --all durability restore durability_daily_restore

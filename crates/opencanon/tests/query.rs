@@ -80,9 +80,19 @@ fn default_excludes_draft_even_when_body_matches() {
 fn tag_only_does_not_match() {
     let dir = tempdir().unwrap();
     seed_active_and_draft(dir.path());
-    let output = run(dir.path(), &["query", "--all", "durability"]);
+    let output = run(dir.path(), &["query", "--all", "armybreak"]);
     let data = assert_ok(&output, "query");
     assert_eq!(data["count"], 0);
+}
+
+#[test]
+fn id_substring_matches_when_body_omits_keyword() {
+    let dir = tempdir().unwrap();
+    seed_active_and_draft(dir.path());
+    let output = run(dir.path(), &["query", "--all", "daily"]);
+    let data = assert_ok(&output, "query");
+    assert_eq!(data["count"], 1);
+    assert_eq!(data["atoms"][0]["id"], SAMPLE_ID);
 }
 
 #[test]

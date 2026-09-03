@@ -2,8 +2,8 @@ use crate::model::Atom;
 use crate::ops::{filter_atoms, ListFilter};
 use crate::Error;
 
-/// Filter by [`ListFilter`], then keep atoms whose `body` contains any keyword
-/// or whose `id` equals a keyword (trim + case-fold).
+/// Filter by [`ListFilter`], then keep atoms whose `body` or `id` contains
+/// any keyword (trim + case-fold substring).
 ///
 /// `title` and `tags` do not participate. Input order is preserved.
 pub fn query(
@@ -42,19 +42,14 @@ fn needles(keywords: &[String]) -> Result<Vec<String>, Error> {
 }
 
 fn matches_keyword(atom: &Atom, needles: &[String]) -> bool {
-    body_matches(&atom.body, needles) || id_matches(&atom.id, needles)
+    contains_any(&atom.body, needles) || contains_any(&atom.id, needles)
 }
 
-fn body_matches(body: &str, needles: &[String]) -> bool {
-    let haystack = body.to_lowercase();
+fn contains_any(haystack: &str, needles: &[String]) -> bool {
+    let haystack = haystack.to_lowercase();
     needles
         .iter()
         .any(|needle| haystack.contains(needle.as_str()))
-}
-
-fn id_matches(id: &str, needles: &[String]) -> bool {
-    let id = id.to_lowercase();
-    needles.iter().any(|needle| id == *needle)
 }
 
 #[cfg(test)]
@@ -150,8 +145,27 @@ mod tests {
 
     #[test]
     fn tag_only_does_not_match() {
-        let hits = query(sample(), &["durability".into()], ListFilter::All).unwrap();
+        let hits = query(sample(), &["armybreak".into()], ListFilter::All).unwrap();
         assert!(hits.is_empty());
+    }
+
+    #[test]
+    fn id_substring_matches_ids_that_contain_the_word() {
+        let hits = query(sample(), &["durability".into()], ListFilter::All).unwrap();
+        assert_eq!(
+            ids(&hits),
+            vec![
+                "durability_draft",
+                "durability_daily_restore",
+                "durability_deprecated",
+            ]
+        );
+    }
+
+    #[test]
+    fn id_substring_matches_even_when_body_omits_the_word() {
+        let hits = query(sample(), &["title".into()], ListFilter::Active).unwrap();
+        assert_eq!(ids(&hits), vec!["title_only"]);
     }
 
     #[test]

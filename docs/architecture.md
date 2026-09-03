@@ -268,7 +268,7 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 
 合法流转仅 `Draft → Active`、`Active → Deprecated`。其余由 `lifecycle` 判为非法流转。`Deprecated` 回真源：重新 `add` 走审，不提供回流。
 
-消费类能力（拼接、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `body` 做子串召回，或对 `id` 做折叠后全等命中，命中返回完整原子。
+消费类能力（拼接、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `body` 与 `id` 做子串召回，命中返回完整原子。
 
 ---
 
