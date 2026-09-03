@@ -16,7 +16,7 @@ agent 的执行规格，编排的唯一位置。改流程只改本目录；改�
 
 ## 代码读不出来的卡点
 
-- 源文档在命令面之外：agent 自读全文；opencanon 不读、不写源文件。
+- 源文档在命令面之外：opencanon 不读、不写源文件。agent 自读全文；原子化结束后在主张段末写入指向 `opencanon/atoms/<id>.md` 的真源链接，主张正文不动。
 - `opencanon/atoms/` 只经 `add` / `edit` 写入；`opencanon/docs/` 只经 `compose` 写入。skill 把结构化 JSON 交给命令，不让 agent 拼 frontmatter 或直接改这些 md。
 - 人审是质量闸门（原子化里的 `active`）。转正权在人，skill 把卡点写清楚。
 - 语义判定（是否同一事实、是否仍符合实现）在 agent 调 LLM；opencanon 只召回或给信号。
