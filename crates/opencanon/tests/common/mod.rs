@@ -108,3 +108,7 @@ pub fn add_sample(dir: &Path) -> Value {
 pub fn atoms_dir(dir: &Path) -> std::path::PathBuf {
     dir.join("opencanon").join("atoms")
 }
+
+pub fn docs_dir(dir: &Path) -> std::path::PathBuf {
+    dir.join("opencanon").join("docs")
+}

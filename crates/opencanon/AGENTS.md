@@ -2,7 +2,7 @@
 
 进程入口。允许：解析 argv / stdin、注入 cwd 与本地时钟、调 `ops` / `compute` 与 `Store`、渲染信封、设退出码。领域结果在 `canon-core` 算完再交给本层。
 
-写命令的固定节奏：解析 → 读（`add` 必列已有原子以查 slug 占用）→ `ops`/`compute`（任一条失败则整批不写）→ store 写或删 → 信封。整批原子性是胶水，不是第二条领域规则。
+写命令的固定节奏：解析 → 读（`add` 必列已有原子以查 slug 占用；`compose` 按 `atoms` 读原子）→ `ops`/`compute`（任一条失败则整批不写）→ store 写或删 → 信封。整批原子性是胶水，不是第二条领域规则。`compose` 的 stdin 是单个 JSON 对象，不是数组。
 
 ## 落点
 

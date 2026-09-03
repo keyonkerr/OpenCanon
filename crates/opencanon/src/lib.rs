@@ -25,6 +25,7 @@ opencanon edit                                         # stdin: JSON array of {i
 opencanon delete <id>
 opencanon active <id>
 opencanon query <keyword>... [--status draft|active|deprecated] [--all]
+opencanon compose                                      # stdin: JSON object {slug, title, atoms, body}
 opencanon help";
 
 #[derive(Parser)]
@@ -69,6 +70,7 @@ enum Commands {
         #[arg(long, conflicts_with = "status")]
         all: bool,
     },
+    Compose,
     Help,
 }
 
@@ -141,6 +143,7 @@ fn command_name(command: &Commands) -> &'static str {
         Commands::Delete { .. } => "delete",
         Commands::Active { .. } => "active",
         Commands::Query { .. } => "query",
+        Commands::Compose => "compose",
         Commands::Help => "help",
     }
 }
@@ -165,6 +168,7 @@ fn dispatch(command: Commands) -> Result<Value, CliError> {
             status,
             all,
         } => commands::query(&store, &keywords, list_filter(status, all)),
+        Commands::Compose => commands::compose(&store),
         Commands::Help => unreachable!("help is handled before dispatch"),
     }
 }

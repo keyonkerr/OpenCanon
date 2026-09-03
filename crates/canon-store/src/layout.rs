@@ -12,6 +12,14 @@ pub fn atom_path(root: &Path, id: &str) -> PathBuf {
     atoms_dir(root).join(format!("{id}.md"))
 }
 
+pub fn docs_dir(root: &Path) -> PathBuf {
+    namespace_dir(root).join("docs")
+}
+
+pub fn doc_path(root: &Path, id: &str) -> PathBuf {
+    docs_dir(root).join(format!("{id}.md"))
+}
+
 pub fn atom_id_from_filename(name: &str) -> Option<String> {
     if name.starts_with('.') {
         return None;

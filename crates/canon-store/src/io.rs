@@ -3,10 +3,11 @@ use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
-use canon_core::Atom;
+use canon_core::{Atom, ComposedDoc};
 
-use crate::layout::{atom_id_from_filename, atom_path, atoms_dir};
+use crate::layout::{atom_id_from_filename, atom_path, atoms_dir, doc_path, docs_dir};
 use crate::serialize;
+use crate::serialize_doc;
 use crate::Error;
 
 pub struct Store {
@@ -101,6 +102,42 @@ impl Store {
         }
         Ok(atoms)
     }
+
+    pub fn write_doc(&self, doc: &ComposedDoc) -> Result<(), Error> {
+        let dir = docs_dir(&self.root);
+        fs::create_dir_all(&dir)?;
+        let dest = doc_path(&self.root, &doc.id);
+        let tmp = dir.join(format!(".{}.md.tmp", doc.id));
+        let rendered = serialize_doc::to_markdown(doc);
+
+        {
+            let mut file = File::create(&tmp)?;
+            file.write_all(rendered.as_bytes())?;
+            file.sync_all()?;
+        }
+
+        replace_file(&tmp, &dest)?;
+        Ok(())
+    }
+
+    pub fn read_doc(&self, id: &str) -> Result<ComposedDoc, Error> {
+        let path = doc_path(&self.root, id);
+        let text = match fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                return Err(Error::NotFound { id: id.to_string() });
+            }
+            Err(e) => return Err(e.into()),
+        };
+        let doc = serialize_doc::from_markdown(id, &text)?;
+        if doc.id != id {
+            return Err(Error::IdMismatch {
+                path_id: id.to_string(),
+                atom_id: doc.id,
+            });
+        }
+        Ok(doc)
+    }
 }
 
 fn replace_file(tmp: &Path, dest: &Path) -> Result<(), Error> {
@@ -166,6 +203,7 @@ mod tests {
         store.write(&atom).unwrap();
         assert!(atoms_dir(dir.path()).is_dir());
         assert!(!dir.path().join("opencanon").join("topics").exists());
+        assert!(!dir.path().join("opencanon").join("docs").exists());
         let raw =
             std::fs::read_to_string(atoms_dir(dir.path()).join(format!("{}.md", atom.id))).unwrap();
         assert!(raw.starts_with("---\nid: "));
@@ -200,6 +238,38 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = Store::open(dir.path());
         match store.delete("missing") {
+            Err(crate::Error::NotFound { id }) => assert_eq!(id, "missing"),
+            other => panic!("unexpected {other:?}"),
+        }
+        assert!(!namespace_dir(dir.path()).exists());
+    }
+
+    #[test]
+    fn write_doc_creates_docs_dir_roundtrips_and_overwrites() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path());
+        let doc = canon_core::ComposedDoc {
+            id: "how_ssot_works".into(),
+            title: "t".into(),
+            atoms: vec!["ssot_one_place".into()],
+            body: "# t\n\nx [ssot_one_place](../atoms/ssot_one_place.md)".into(),
+        };
+        store.write_doc(&doc).unwrap();
+        assert!(crate::layout::docs_dir(dir.path()).is_dir());
+        assert!(!atoms_dir(dir.path()).exists());
+        assert_eq!(store.read_doc(&doc.id).unwrap(), doc);
+
+        let mut updated = doc.clone();
+        updated.title = "new".into();
+        store.write_doc(&updated).unwrap();
+        assert_eq!(store.read_doc(&doc.id).unwrap().title, "new");
+    }
+
+    #[test]
+    fn read_missing_doc_is_not_found() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path());
+        match store.read_doc("missing") {
             Err(crate::Error::NotFound { id }) => assert_eq!(id, "missing"),
             other => panic!("unexpected {other:?}"),
         }

@@ -68,7 +68,7 @@ pub fn from_markdown(id: &str, text: &str) -> Result<Atom, Error> {
     })
 }
 
-fn split_frontmatter(text: &str) -> Option<(&str, &str)> {
+pub(crate) fn split_frontmatter(text: &str) -> Option<(&str, &str)> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let rest = text
         .strip_prefix("---\r\n")
@@ -92,7 +92,7 @@ fn strip_one_trailing_newline(s: &str) -> &str {
         .unwrap_or(s)
 }
 
-fn yaml_scalar(s: &str) -> String {
+pub(crate) fn yaml_scalar(s: &str) -> String {
     if needs_quotes(s) {
         let escaped = s
             .replace('\\', "\\\\")

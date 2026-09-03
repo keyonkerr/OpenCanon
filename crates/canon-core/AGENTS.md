@@ -8,10 +8,10 @@
 |--------|--------|
 | 原子形状、title/body/slug 不变量、新字段 | `model/`（YAML 键序在 store，不在这里） |
 | 合法 `(from, to)` | 只改 `lifecycle` 一张表 |
-| 命令语义（强制 draft、id 分配、edit 合并、转正戳记、按状态过滤） | `ops/` 先长纯函数，CLI 再接线 |
-| 切块、指纹、查重召回、拼接、查询、新鲜度信号 | `compute/`（目录可新建）。算信号或派生文档，不改原子身份与状态 |
+| 命令语义（强制 draft、id 分配、edit 合并、转正戳记、按状态过滤、compose 校验派生文档） | `ops/` 先长纯函数，CLI 再接线 |
+| 切块、指纹、查重召回、查询、新鲜度信号 | `compute/`（目录可新建）。算信号，不改原子身份与状态 |
 
-`ops` 改变或筛选原子；`compute` 只从已有值计算。同一条规则若在 store / CLI / skill 里再写一遍，删副本、留这里。
+`ops` 改变或筛选原子，或校验一条命令的写入值（含 `compose`）；`compute` 只从已有值计算。同一条规则若在 store / CLI / skill 里再写一遍，删副本、留这里。`compose` 不进 `compute/`。
 
 ## 代码读不出来的契约
 
@@ -26,4 +26,4 @@
 
 ## 测试
 
-对着 `model` / `lifecycle` / `ops`（及日后 `compute`）的公开函数写。无 IO。不断言磁盘 md 键序，不断言 CLI 信封。core 失败 = 规则坏了。
+对着 `model` / `lifecycle` / `ops` / `compute` 的公开函数写。无 IO。不断言磁盘 md 键序，不断言 CLI 信封。core 失败 = 规则坏了。

@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 
-use canon_core::ops::{AddDraft, EditPatch, FreshnessPatch};
+use canon_core::ops::{AddDraft, ComposeDraft, EditPatch, FreshnessPatch};
 use canon_core::{Freshness, Status};
 use serde_json::{Map, Value};
 
@@ -68,17 +68,36 @@ pub fn parse_edit_patches(raw: &str) -> Result<Vec<EditPatch>, CliError> {
     Ok(patches)
 }
 
+pub fn parse_compose_draft(raw: &str) -> Result<ComposeDraft, CliError> {
+    let value = parse_json_value(raw)?;
+    let obj = value
+        .as_object()
+        .ok_or_else(|| CliError::invalid_json("stdin must be a JSON object"))?;
+    let slug = required_string(obj, 0, "slug")?;
+    let title = required_string(obj, 0, "title")?;
+    let body = required_string(obj, 0, "body")?;
+    let atoms = required_atom_ids(obj, 0)?;
+    Ok(ComposeDraft {
+        slug,
+        title,
+        body,
+        atoms,
+    })
+}
+
 fn parse_object_array(raw: &str) -> Result<Vec<Value>, CliError> {
+    match parse_json_value(raw)? {
+        Value::Array(items) => Ok(items),
+        _ => Err(CliError::invalid_json("stdin must be a JSON array")),
+    }
+}
+
+fn parse_json_value(raw: &str) -> Result<Value, CliError> {
     let trimmed = raw.trim_start_matches('\u{feff}').trim();
     if trimmed.is_empty() {
         return Err(CliError::invalid_json("stdin is empty"));
     }
-    let value: Value =
-        serde_json::from_str(trimmed).map_err(|e| CliError::invalid_json(e.to_string()))?;
-    match value {
-        Value::Array(items) => Ok(items),
-        _ => Err(CliError::invalid_json("stdin must be a JSON array")),
-    }
+    serde_json::from_str(trimmed).map_err(|e| CliError::invalid_json(e.to_string()))
 }
 
 fn object_at(item: &Value, index: usize) -> Result<&Map<String, Value>, CliError> {
@@ -148,6 +167,37 @@ fn required_tags(obj: &Map<String, Value>, index: usize) -> Result<Vec<String>, 
             "tags must be an array",
         )),
         None => Ok(Vec::new()),
+    }
+}
+
+fn required_atom_ids(obj: &Map<String, Value>, index: usize) -> Result<Vec<String>, CliError> {
+    match obj.get("atoms") {
+        None => Err(CliError::validation(
+            index,
+            Some("atoms".to_string()),
+            "missing atoms",
+        )),
+        Some(Value::Array(items)) => {
+            let mut atoms = Vec::with_capacity(items.len());
+            for item in items {
+                match item {
+                    Value::String(s) => atoms.push(s.clone()),
+                    _ => {
+                        return Err(CliError::validation(
+                            index,
+                            Some("atoms".into()),
+                            "atoms must be an array of strings",
+                        ));
+                    }
+                }
+            }
+            Ok(atoms)
+        }
+        Some(_) => Err(CliError::validation(
+            index,
+            Some("atoms".into()),
+            "atoms must be an array",
+        )),
     }
 }
 
