@@ -13,6 +13,7 @@ opencanon edit                                         # stdin: JSON array of {i
 opencanon delete <id>
 opencanon active <id>
 opencanon query <keyword>... [--status draft|active|deprecated] [--all]
+opencanon freshness [id...]                            # omit = all active
 opencanon compose                                      # stdin: JSON object {slug, title, atoms, body}
 opencanon help
 ";

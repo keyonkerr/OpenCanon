@@ -3,6 +3,7 @@ mod add;
 mod compose;
 mod delete;
 mod edit;
+mod freshness;
 mod get;
 mod init;
 mod list;
@@ -33,6 +34,10 @@ pub fn init(store: &Store) -> Result<Value, CliError> {
 
 pub fn query(store: &Store, keywords: &[String], filter: ListFilter) -> Result<Value, CliError> {
     query::run(store, keywords, filter)
+}
+
+pub fn freshness(store: &Store, ids: &[String]) -> Result<Value, CliError> {
+    freshness::run(store, ids)
 }
 
 pub fn compose(store: &Store) -> Result<Value, CliError> {

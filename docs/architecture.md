@@ -178,7 +178,7 @@ crates/opencanon/src/
 | CRUD | `add` `get` `list` `edit` `delete` | 原子存取 |
 | 生命周期 | `active` `deprecate` | 状态流转 |
 | 派生文档 | `compose` | 校验引用并写入 `opencanon/docs/` |
-| 计算 | `chunk` `fingerprint` `dup-candidates` `query` `freshness-signals` | 确定性派生 |
+| 计算 | `chunk` `fingerprint` `dup-candidates` `query` `freshness` | 确定性派生；`freshness` 同时写回 `score` |
 
 ### 4.4 `skills/` — 唯一的流程位置
 
@@ -236,7 +236,7 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 | `status` | `draft` / `active` / `deprecated`；只有 `active` 是真源 |
 | `title` | 一句话概括该事实；与 `body` 均非空 |
 | `tags` | 分类；`query` 对 tags 做子串匹配（与 id / title / body 相同） |
-| `freshness` | `last-verified`（上次确认仍成立的本地时间）、`impl-path`（对照实现相对路径）、`score`（机器粗分）；皆可缺省 |
+| `freshness` | `last-verified`（上次确认仍成立的本地时间）、`impl-path`（对照实现相对路径）、`score`（机器粗分，由 `opencanon freshness` 写回）；皆可缺省 |
 | `body` | 单事实正文，自包含 |
 
 `slug` 只出现在 `add` 入参里，用来作为 id，**不是**独立持久字段，不另进 frontmatter。
@@ -318,9 +318,9 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 新鲜度无法从文档自身算出，必须对照当前实现。
 
-1. `freshness-signals` 算元数据信号与粗分（距上次修改、实现路径是否仍在、版本控制时间等）。
-2. 对低于阈值者，agent 取原子内容与 `impl-path` 指向的实现，调 LLM 确认是否仍符合现状。
-3. 仍符合：`edit` 更新 `last-verified`；已过时：人改内容后再 `edit`。
+1. `freshness` 写回相对当前实现的机器粗分（因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)）。
+2. 对低于阈值者，agent 取原子内容与 `impl-path` 指向的实现，调 LLM 确认是否仍符合现状。（未做）
+3. 仍符合：`edit` 更新 `last-verified`；已过时：人改内容后再 `edit`。（未做）
 
 ---
 

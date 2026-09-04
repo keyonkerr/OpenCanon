@@ -9,7 +9,8 @@
 | 原子形状、title/body/slug 不变量、新字段 | `model/`（YAML 键序在 store，不在这里） |
 | 合法 `(from, to)` | 只改 `lifecycle` 一张表 |
 | 命令语义（强制 draft、id 分配、edit 合并、转正戳记、按状态过滤、compose 校验派生文档） | `ops/` 先长纯函数，CLI 再接线 |
-| 切块、指纹、查重召回、查询、新鲜度信号 | `compute/`（目录可新建）。算信号，不改原子身份与状态 |
+| 切块、指纹、查重召回、查询 | `compute/`（目录可新建）。算信号，不改原子身份与状态 |
+| 新鲜度因素、合成、权重总表 | [`compute/freshness/AGENTS.md`](src/compute/freshness/AGENTS.md) |
 
 `ops` 改变或筛选原子，或校验一条命令的写入值（含 `compose`）；`compute` 只从已有值计算。同一条规则若在 store / CLI / skill 里再写一遍，删副本、留这里。`compose` 不进 `compute/`。
 
