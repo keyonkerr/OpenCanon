@@ -220,7 +220,7 @@ mod tests {
             title: "禁军突围装备耐久恢复机制".into(),
             tags: vec!["armybreak".into(), "durability".into()],
             freshness: Freshness {
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 ..Freshness::default()
             },
             body: "正文：只描述一个事实。".into(),

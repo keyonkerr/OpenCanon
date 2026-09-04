@@ -60,7 +60,7 @@ mod tests {
             body: body.into(),
             tags: vec!["armybreak".into()],
             freshness: Freshness {
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 ..Freshness::default()
             },
         }

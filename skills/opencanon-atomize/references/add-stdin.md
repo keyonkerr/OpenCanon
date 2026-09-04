@@ -11,7 +11,7 @@ stdin 必须是 JSON **数组**（不能是单个对象）。元素 kebab-case�
     "title": "<title>",
     "tags": ["<tag>"],
     "body": "<body>",
-    "freshness": { "impl-path": "<relative-path>" }
+    "freshness": { "impl-path": ["<relative-path>", "<relative-path>"] }
   }
 ]
 ```
@@ -25,7 +25,7 @@ stdin 必须是 JSON **数组**（不能是单个对象）。元素 kebab-case�
 ### 可选
 
 - `tags`：字符串数组。省略 = `[]`
-- `freshness`：对象。省略 = `{}`。拆分时只填 `impl-path`（相对被治理项目根的代码/配表路径）
+- `freshness`：对象。省略 = `{}`。拆分时只填 `impl-path`：相对被治理项目根的代码/配表路径，一条字符串或字符串数组（一篇 body 所引用实现的总览）
 
 ### 不要传
 

@@ -7,4 +7,4 @@ pub mod model;
 pub mod ops;
 
 pub use error::{Error, SlugConflict};
-pub use model::{Atom, ComposedDoc, Freshness, Score, Status, Timestamp};
+pub use model::{Atom, ComposedDoc, Freshness, ImplPaths, Score, Status, Timestamp};

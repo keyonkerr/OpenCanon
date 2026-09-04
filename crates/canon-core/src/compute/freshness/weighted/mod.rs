@@ -8,11 +8,11 @@ use super::ImplSnapshot;
 /// Sole place weighted `id → weight` is assigned. Sum must be ≤ 1.
 const WEIGHTS: &[(&str, f64)] = &[(impl_current::ID, 0.40)];
 
-pub fn factors(atom: &Atom, snapshot: &ImplSnapshot) -> Vec<Factor> {
+pub fn factors(atom: &Atom, snapshots: &[ImplSnapshot]) -> Vec<Factor> {
     vec![Factor {
         id: impl_current::ID,
         kind: FactorKind::Weighted,
-        value: impl_current::value(atom, snapshot),
+        value: impl_current::value(atom, snapshots),
         weight: Some(weight(impl_current::ID)),
     }]
 }

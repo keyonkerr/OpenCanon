@@ -47,7 +47,21 @@ $ opencanon get durability_daily_restore
 
 候选（一条）：`opencanon get` 按 id 读出完整原子（含 body），任意 status 可读，不改磁盘。
 
-成功示例里的命令行和 JSON 不成候选。
+成功示例里的命令行和 JSON 不成候选。约束若落在多个实现文件，仍是这一条：body 按文件成段，`impl-path` 列出那些路径。不要拆成多条原子，也不要因为某一个文件盖不全整篇而省略 path。
+
+## body 按实现文件分块
+
+源（一条命令主张，落地在两个文件）：
+
+```markdown
+`opencanon freshness [id...]` 对 active 原子打分写回 score。无 impl-path 则 skip。
+clap 用法错误退出码 2、无信封。
+```
+
+归属：仍一条（读者当一个命令问题来查）。通写：按文件成段，每段约束只陈述该文件负责的事实；`impl-path` 列出 `commands/freshness.rs` 与（仅当本条确实主张退出码且尚未被全局约定原子覆盖时）对应 CLI 入口文件。
+
+不是「freshness.rs 一条、lib.rs 一条」。不是省略 path。全局 clap 退出码若已是另一条原子的事实，本条不重复。
+
 
 ## 表行同决策
 

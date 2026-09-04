@@ -4,18 +4,22 @@ use super::super::ImplSnapshot;
 
 pub const ID: &str = "body-in-impl";
 
-pub fn value(atom: &Atom, snapshot: &ImplSnapshot) -> f64 {
-    if !snapshot.exists {
+pub fn value(atom: &Atom, snapshots: &[ImplSnapshot]) -> f64 {
+    if snapshots.is_empty() || snapshots.iter().any(|s| !s.exists) {
         return 0.0;
     }
-    let Some(text) = snapshot.text.as_deref() else {
-        return 0.0;
-    };
+    let mut haystack = String::new();
+    for snapshot in snapshots {
+        let Some(text) = snapshot.text.as_deref() else {
+            return 0.0;
+        };
+        haystack.push_str(&text.to_ascii_lowercase());
+        haystack.push('\n');
+    }
     let tokens = code_tokens(&atom.body);
     if tokens.is_empty() {
         return 1.0;
     }
-    let haystack = text.to_ascii_lowercase();
     if tokens.iter().all(|tok| haystack.contains(tok)) {
         1.0
     } else {

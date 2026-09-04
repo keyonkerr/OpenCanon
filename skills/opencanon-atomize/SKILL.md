@@ -62,16 +62,22 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 主 tag 取读者会用来提问的中心词（如 `查重`、`拼接`、`迁移`、`SSOT`），一条一个。该词（或源里已有的同义说法）必须出现在 `title` 或 `body` 中，语言随 `opencanon/config.yaml` 的 `locales`（英语中心词始终可出现在 slug / 英文别名里）。
 
-然后按类型找实现：机制 / 规则 / 命令类在被治理项目里查找。写入 `freshness.impl-path` 当且仅当该路径的实现覆盖 `body` 里每一条机制约束（相对项目根，指向代码或配表，不指向源文档）。覆盖不全：先收窄 `body` 使与现状同宽，或省略 `impl-path`、保持为决策主张。无实现：省略 `impl-path`。问题 / 市场 / 调研类不填。
+然后按类型找实现：机制 / 规则 / 命令类在被治理项目里查找代码或配表。对照见 [references/split.md](references/split.md) 的「body 按实现文件分块」。
+
+同一条 body 里，每条约束能指回恰好一个路径；按文件成段书写（连续句组即可，不发明新标记语法）。缺席约束归「若存在会写在哪」的那个文件。不要为了文件边界把一个问题拆成多条原子。
+
+`freshness.impl-path` 列出这些路径（一条或多条，相对项目根），与分块用到的 path 一致。有落点就必须填。禁止用「某一个文件盖不全整篇」省略。
+
+无落点才省略：问题 / 市场 / 调研，以及没有任何代码/配表可对的句子（不要写进已挂 path 的分块）。全局约定若已是另一条原子的事实，本条不重复。
 
 完成（须同时成立才进入召回）：
 
 1. 源回指一对一；没有两条覆盖同一决策，也没有「原则一条、其形态或门禁又一条」。每条自立：单独成篇仍回答一个完整问题。
 2. 未决项已在它所修饰的机制里；同一陈述只出现在一条。职责清单条只含原则与互斥边界；各机制的动词、约束、未决在机制条。
 3. 每条 `body` 通过删句（仍能指出覆盖的源位置）；痛点已落到「故」后的约束；`title` 与之一致；`slug` 合法且本批互不相同。收束句没有两条同写。调研快照含可核对时点。
-4. 机制 / 规则 / 命令类：已查找实现。`impl-path` 仅在实现覆盖 `body` 全部机制约束时填写；覆盖不全则已收窄 `body` 或已省略 path；无实现则省略。问题 / 市场 / 调研类无 `impl-path`。
+4. 机制 / 规则 / 命令类：已查找实现。有落点则 `impl-path` 列出全部分块路径，body 按文件成段；无落点才省略。未因单文件盖不全而省略 path，也未因此拆成多条原子。问题 / 市场 / 调研类无 `impl-path`。
 5. 每条一个主 tag，取该主张被查时的中心词；该词或源里同义说法已出现在 `title` 或 `body`。
-6. 已套过 split.md 的合稿例与通写例（含清单与机制、删句、调研时点、收束句、迁移手续并入、痛点落到故）。
+6. 已套过 split.md 的合稿例与通写例（含清单与机制、删句、调研时点、收束句、迁移手续并入、痛点落到故、body 按文件分块）。
 
 ## 3. 召回并判是否同一事实
 
@@ -81,7 +87,7 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 ## 4. 读 impl-path 自动判定
 
-按 [references/judge.md](references/judge.md) 打开本批带 `impl-path` 的实现全文，核 `body` 与代码事实是否一致。本步不写盘。
+按 [references/judge.md](references/judge.md) 打开本批 `impl-path` 里每一个实现文件，按 body 分块核对应文件，不要求单文件覆盖整篇。本步不写盘。
 
 完成：每个带路径的候选是 `true`、`false` 或 `ask`；每个须核的 `same` / 待选 `same` 命中是不动、`auto_edit` 或 `ask_edit`。
 
@@ -102,10 +108,10 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 **真实性**只问步骤 4/5 标了 `ask` 的：将要新建的，以及 `same` 且命中是 **draft** 的。题干给该条 `title`、`body`，并固定一行实现状态，三选一：
 
 - `实现：无`
-- `实现：有且与 body 一致（impl-path: <path>）`
-- `实现：有但对不上或窄于 body`
+- `实现：已列 path 且各块与对应文件一致（impl-path: …）`
+- `实现：某块与其文件对不上`
 
-不得在窄于 `body` 的实现上填写 `impl-path`。选项固定：
+选项固定：
 
 | id | 标签 | 之后 |
 |----|------|------|

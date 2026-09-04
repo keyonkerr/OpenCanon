@@ -22,7 +22,7 @@
 - `list` 与 `query` 共用 `ListFilter`：默认 / `Active` = 只真源；`Status(x)` = 只该状态；`All` = 三种都在。`query` 不再自写语料过滤。
 - `query` 命中：keyword 对 `id` / `title` / `tags` / `body` 做大小写折叠子串。任一场命中即入选。
 - 只有 `status == active` 是真源。draft / deprecated 与真源同目录，靠 `ops` 过滤，不靠分子目录。
-- Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`freshness.impl-path` 指向活实现，不把源文档或代码拷进原子。
+- Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`freshness.impl-path` 指向活实现（一条或多条路径），不把源文档或代码拷进原子。
 - `Deprecated` 回真源：删除占用该 slug 的文件后重新 `add` 走审。不提供回流。
 
 ## 测试

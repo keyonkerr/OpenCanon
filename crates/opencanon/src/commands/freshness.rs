@@ -25,9 +25,9 @@ pub fn run(store: &Store, ids: &[String]) -> Result<Value, CliError> {
             }));
             continue;
         }
-        let path = atom.freshness.impl_path.as_deref().unwrap();
-        let snapshot = probe(store.root(), path);
-        let evaluation = freshness::evaluate(&atom, &snapshot).expect("impl-path present");
+        let paths = atom.freshness.impl_path.as_slice();
+        let snapshots: Vec<_> = paths.iter().map(|path| probe(store.root(), path)).collect();
+        let evaluation = freshness::evaluate(&atom, &snapshots).expect("impl-path present");
         let next = ops::apply_score(atom.clone(), evaluation.score);
         if !ops::score_unchanged(&atom, &next) {
             store

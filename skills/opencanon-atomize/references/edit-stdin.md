@@ -9,7 +9,7 @@ stdin 必须是 JSON **数组**。元素必填 `id`；出现的可变字段覆�
   {
     "id": "durability_daily_restore",
     "body": "禁军突围中，装备耐久按日恢复。",
-    "freshness": { "impl-path": "gamesvr/DurabilityManager.java" }
+    "freshness": { "impl-path": ["gamesvr/DurabilityManager.java"] }
   }
 ]
 ```

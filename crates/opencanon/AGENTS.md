@@ -14,7 +14,7 @@
 | `--version` / `help` | 成功时无信封；clap 用法错误退出码 2、stderr、无信封 |
 | `list` / `query` 状态 argv | 省略 = active；`--status` 取 draft、active 或 deprecated；`--all`；二者互斥。不要 `--status all`，不要 `--include-draft` |
 | `init` | 无 argv。无 TTY 时退出码 2、stderr、无信封。成功时走信封。 |
-| `freshness [id...]` | 省略 = 全部 active（同 `list`）；指定 id 须存在且 active；argv 去重保序；不读 `OPENCANON_NOW`；CLI 注入实现快照后调 `compute/freshness`，`ops::apply_score` 只改 `score` |
+| `freshness [id...]` | 省略 = 全部 active（同 `list`）；指定 id 须存在且 active；argv 去重保序；不读 `OPENCANON_NOW`；CLI 对每个 `impl-path` 注入实现快照后调 `compute/freshness`，`ops::apply_score` 只改 `score` |
 
 契约真源是本 crate 的 serde 返回类型加命令级测试，不另维护 JSON Schema。skill 不抄字段表。
 

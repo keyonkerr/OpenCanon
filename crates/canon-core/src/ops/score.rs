@@ -23,7 +23,7 @@ mod tests {
             tags: vec!["x".into()],
             freshness: Freshness {
                 last_verified: Some("2026-09-01 13:05:00".into()),
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 score: Some(Score::one()),
             },
             body: "body".into(),

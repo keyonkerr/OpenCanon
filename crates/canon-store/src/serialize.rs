@@ -34,8 +34,15 @@ pub fn to_markdown(atom: &Atom) -> String {
         if let Some(v) = &atom.freshness.last_verified {
             out.push_str(&format!("  last-verified: {}\n", yaml_scalar(v)));
         }
-        if let Some(v) = &atom.freshness.impl_path {
-            out.push_str(&format!("  impl-path: {}\n", yaml_scalar(v)));
+        match atom.freshness.impl_path.as_slice() {
+            [] => {}
+            [one] => out.push_str(&format!("  impl-path: {}\n", yaml_scalar(one))),
+            many => {
+                out.push_str("  impl-path:\n");
+                for path in many {
+                    out.push_str(&format!("    - {}\n", yaml_scalar(path)));
+                }
+            }
         }
         if let Some(v) = atom.freshness.score {
             out.push_str(&format!("  score: {}\n", v.yaml_display()));
@@ -156,7 +163,7 @@ fn looks_like_number(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use canon_core::{Atom, Freshness, Score, Status};
+    use canon_core::{Atom, Freshness, ImplPaths, Score, Status};
 
     use super::{from_markdown, to_markdown};
 
@@ -167,7 +174,7 @@ mod tests {
             title: "禁军突围装备耐久恢复机制".into(),
             tags: vec!["armybreak".into(), "durability".into()],
             freshness: Freshness {
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 ..Freshness::default()
             },
             body: "正文：只描述一个事实。".into(),
@@ -222,7 +229,7 @@ freshness:
             tags: vec![],
             freshness: Freshness {
                 last_verified: Some("2026-09-01 12:15:00".into()),
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 score: Some(Score::one()),
             },
             body: "b".into(),
@@ -234,5 +241,23 @@ freshness:
         let sc = freshness.find("  score: 1\n").unwrap();
         assert!(lv < ip && ip < sc);
         assert!(!md.contains("score: 1.0"));
+    }
+
+    #[test]
+    fn multiple_impl_paths_serialize_as_yaml_list_and_roundtrip() {
+        let atom = Atom {
+            id: "x_sample".into(),
+            status: Status::Active,
+            title: "t".into(),
+            tags: vec![],
+            freshness: Freshness {
+                impl_path: ImplPaths::new(["a.rs", "b.rs"]),
+                ..Freshness::default()
+            },
+            body: "b".into(),
+        };
+        let md = to_markdown(&atom);
+        assert!(md.contains("  impl-path:\n    - a.rs\n    - b.rs\n"));
+        assert_eq!(from_markdown(&atom.id, &md).unwrap(), atom);
     }
 }

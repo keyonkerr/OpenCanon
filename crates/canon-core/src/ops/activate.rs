@@ -30,7 +30,7 @@ mod tests {
             title: "禁军突围装备耐久恢复机制".into(),
             tags: vec!["armybreak".into()],
             freshness: Freshness {
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 score: Some(Score::new(0.2)),
                 ..Freshness::default()
             },

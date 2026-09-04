@@ -1,4 +1,4 @@
-use crate::model::{Atom, Freshness, Score, Status};
+use crate::model::{Atom, Freshness, ImplPaths, Score, Status};
 use crate::Error;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize)]
@@ -6,7 +6,7 @@ pub struct FreshnessPatch {
     #[serde(rename = "last-verified")]
     pub last_verified: Option<String>,
     #[serde(rename = "impl-path")]
-    pub impl_path: Option<String>,
+    pub impl_path: Option<ImplPaths>,
     pub score: Option<Score>,
 }
 
@@ -105,7 +105,7 @@ fn apply_one(index: usize, mut atom: Atom, patch: &EditPatch) -> Result<Atom, Er
 fn merge_freshness(old: Freshness, patch: &FreshnessPatch) -> Freshness {
     Freshness {
         last_verified: patch.last_verified.clone().or(old.last_verified),
-        impl_path: patch.impl_path.clone().or(old.impl_path),
+        impl_path: patch.impl_path.clone().unwrap_or(old.impl_path),
         score: patch.score.or(old.score),
     }
 }
@@ -123,7 +123,7 @@ mod tests {
             title: "禁军突围装备耐久恢复机制".into(),
             tags: vec!["armybreak".into(), "durability".into()],
             freshness: Freshness {
-                impl_path: Some("gamesvr/DurabilityManager.java".into()),
+                impl_path: "gamesvr/DurabilityManager.java".into(),
                 ..Freshness::default()
             },
             body: "正文：只描述一个事实。".into(),
@@ -187,8 +187,8 @@ mod tests {
             Some("2026-09-01 12:15:00")
         );
         assert_eq!(
-            out[0].freshness.impl_path.as_deref(),
-            Some("gamesvr/DurabilityManager.java")
+            out[0].freshness.impl_path.as_slice(),
+            ["gamesvr/DurabilityManager.java"]
         );
 
         let keep = EditPatch {
@@ -267,6 +267,6 @@ mod tests {
         };
         let out = apply_edits(&[atom()], &[patch]).unwrap();
         assert_eq!(out[0].freshness.score, Some(Score::one()));
-        assert!(out[0].freshness.impl_path.is_some());
+        assert!(!out[0].freshness.impl_path.is_empty());
     }
 }
