@@ -8,7 +8,7 @@
 |------|------|------|
 | `opencanon`（Rust） | 原子的校验、流转、落盘、确定性计算 | LLM、流程编排、源文档 |
 | agent | 读 skill、调 LLM、按顺序调命令 | 直接写 `opencanon/atoms/`、`opencanon/docs/`、改源文档 |
-| 人 | 指定源文档、审 draft、决定转正 | — |
+| 人 | 指定源文档；仅在 LLM 无法核对时批复转正 | — |
 
 ---
 
@@ -186,7 +186,7 @@ agent 的执行规格。Rust 不读取本目录。改流程不改 crate；改校
 
 ```
 skills/
-├── opencanon-atomize/SKILL.md  # 原子化：读源 → LLM 拆 → query 召回 → LLM 判同 → 提问 → add/edit → 真实的再 active
+├── opencanon-atomize/SKILL.md  # 原子化：读源 → LLM 拆 → query 召回 → 读实现判定 → 只问剩余 → add/edit → true 再 active
 ├── opencanon-compose/SKILL.md  # 组合：query → LLM 成文 → 按需 compose 写入 docs
 ├── dedup.md               # 查重：召回 → LLM 判同 → deprecate
 └── freshness.md           # 新鲜度：信号 → LLM 对照实现 → edit
@@ -291,13 +291,13 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 ### 7.1 原子化（`skills/opencanon-atomize/SKILL.md`）
 
-把一篇多事实源文档变成多条单事实原子。人审在落盘前，不能省。
+把一篇多事实源文档变成多条单事实原子。body 与代码事实一致则写入并转正；无法对照才问人，且问在落盘前。
 
 1. 人指定源文档；agent 自读全文（命令面不碰源文件；结束后在主张段末加真源链接）。
 2. agent 调 LLM 拆成候选单事实（先不落盘）。
 3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；LLM 判是否同一事实，不准才问人。同则复用，不新建。
-4. 提问工具对将要新建的候选判定：真实 / 不确定 / 非真实。非真实不创建。复用且现有正文缺细节时再问是否 `edit`。
-5. 新建的按 skill 模板 `add` 为 draft；真实的再 `active`。复用的不 `add`；确认补充则 `edit`。工具不记录与源文档的血缘。
+4. 打开 `impl-path` 全文，核 body 与代码是否一致。一致则 `true`（已有原子则可 `auto_edit`）；不一致则 `false` 或不把错误细节写入；无路径或对不上才问人。
+5. 新建的按 skill 模板 `add` 为 draft；`true` 的再 `active`。复用的不 `add`；`auto_edit` 或确认补充则 `edit`。工具不记录与源文档的血缘。
 
 ### 7.2 查重（`skills/dedup.md`）
 

@@ -1,6 +1,6 @@
 # `opencanon edit` stdin
 
-步骤 5 选了 `edit`、组复用补充，或 `edit` 报 `VALIDATION_FAILED` 时读。只含确认写入现有原子的项。
+步骤 4 标了 `auto_edit`、步骤 6 选了 `edit`、组复用补充，或 `edit` 报 `VALIDATION_FAILED` 时读。只含确认写入现有原子的项。
 
 stdin 必须是 JSON **数组**。元素必填 `id`；出现的可变字段覆盖，省略则保持。补全后的 `body` 是单一主张。
 

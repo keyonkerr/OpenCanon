@@ -1,6 +1,6 @@
 # `opencanon add` stdin
 
-拆候选定 `slug`、组新建数组、或 `add` 报 `VALIDATION_FAILED` / `SLUG_CONFLICT` 时读。只把要新建的 `true` 与 `uncertain` 放进数组；复用已有原子的不进 `add`。
+拆候选定 `slug`、组新建数组、或 `add` 报 `VALIDATION_FAILED` / `SLUG_CONFLICT` 时读。只把要新建的 `true` 与 `uncertain` 放进数组（LLM 已判 `true` 的与人选 `true` 同等对待）；复用已有原子的不进 `add`。
 
 stdin 必须是 JSON **数组**（不能是单个对象）。元素 kebab-case。
 
@@ -43,7 +43,7 @@ stdin 必须是 JSON **数组**（不能是单个对象）。元素 kebab-case�
 
 形状不合法 → `VALIDATION_FAILED`，`error.details.field` 为 `slug`，整批不写。不要静默改写后再假装成功；改 slug 后重试全数组。
 
-已有原子占用该 slug（任一 status）或本批重复 → `SLUG_CONFLICT`。`error.details.slugs` 是已占用 slug 列表；`error.details.conflicts[]` 每项 `{ index, slug, status? }`（磁盘占用带 `status`；本批互撞无 `status`）。整批不写。分支见 SKILL 步骤 6。
+已有原子占用该 slug（任一 status）或本批重复 → `SLUG_CONFLICT`。`error.details.slugs` 是已占用 slug 列表；`error.details.conflicts[]` 每项 `{ index, slug, status? }`（磁盘占用带 `status`；本批互撞无 `status`）。整批不写。分支见 SKILL 步骤 7。
 
 ### 调用
 
@@ -65,8 +65,8 @@ stdin 必须是 JSON **数组**（不能是单个对象）。元素 kebab-case�
 候选与判定：
 
 1. 耐久按日恢复 → 与已有原子同一事实（不进 `add`）
-2. 某段比喻性描述 → 新建、`false`（丢弃）
-3. 上限是否走配表 → 新建、`uncertain`
+2. 声称 `get` 只读 `active` → 打开实现后与代码不一致，`false`（不进 `add`）
+3. 上限是否走配表 → 无实现可对照，人选 `uncertain`
 
 组出的 stdin（一条）：
 

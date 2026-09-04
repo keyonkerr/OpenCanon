@@ -18,7 +18,7 @@
 
 ## 解题思路
 
-把旧文档迁成原子真源，而不是把主张改写进原地。源里的主张正文不动；迁出的事实落独立真源目录。人确认真实后才成为真源。迁完后真源是新权威，旧文只作入口、用链接指向真源。（[真源：把旧文档迁成原子真源而非原地改写](../opencanon/atoms/migrate_to_atom_ssot.md) · [真源：转正权在人且在落盘前](../opencanon/atoms/human_promotes_before_write.md) · [真源：迁完后真源为唯一权威且不长期追踪血缘](../opencanon/atoms/ssot_authority_no_lineage.md)）
+把旧文档迁成原子真源，而不是把主张改写进原地。源里的主张正文不动；迁出的事实落独立真源目录。body 与代码事实一致则可代行转正；无法对照才问人。迁完后真源是新权威，旧文只作入口、用链接指向真源。（[真源：把旧文档迁成原子真源而非原地改写](../opencanon/atoms/migrate_to_atom_ssot.md) · [真源：转正须有独立证据否则人审且在落盘前](../opencanon/atoms/human_promotes_before_write.md) · [真源：迁完后真源为唯一权威且不长期追踪血缘](../opencanon/atoms/ssot_authority_no_lineage.md)）
 
 确定性计算归工具，语义判断归 LLM，流程编排归 Skill。（[真源：确定性归工具、语义归 LLM、编排归 Skill](../opencanon/atoms/tool_llm_skill_split.md)）
 
@@ -26,7 +26,7 @@
 
 - 其它文档用链接跳转，不复制正文。（[真源：OpenCanon 一处事实只记录一次](../opencanon/atoms/ssot_one_place.md)）
 - 新内容先查后写：入库前对照已有主张（含未转正、已下线）判是否同一事实。已有则复用或补细节，没有才新建。（[真源：入库前对照已有主张判是否同一事实](../opencanon/atoms/ingest_dedup_same_fact.md)）
-- 转正权在人，且在落盘前：确认真实才算真源；不确定可暂不转正；非真实不入库。（[真源：转正权在人且在落盘前](../opencanon/atoms/human_promotes_before_write.md)）
+- 转正须有独立证据：body 与代码事实一致、且不与 active 真源冲突则可代行转正；与代码不一致则不入库；无法对照才问人，且问在落盘前。源文档不是证据。不确定由人选择保持 draft。（[真源：转正须有独立证据否则人审且在落盘前](../opencanon/atoms/human_promotes_before_write.md)）
 - 库内查重仍用字面相似度做宽阈值召回（宁宽勿漏），再交给 agent 判「是否同一事实」。误报成本低（判否即可），漏报成本高。字面相似度抓不住措辞差很大的同事实，这是已知边界，入库时的语义判同补这一刀。（[真源：入库前对照已有主张判是否同一事实](../opencanon/atoms/ingest_dedup_same_fact.md)）
 
 ### 对付查找
