@@ -9,7 +9,7 @@
 | 原子形状、title/body/slug 不变量、新字段 | `model/`（YAML 键序在 store，不在这里） |
 | 合法 `(from, to)` | 只改 `lifecycle` 一张表 |
 | 命令语义（强制 draft、id 分配、edit 合并、转正戳记、按状态过滤、compose 校验派生文档） | `ops/` 先长纯函数，CLI 再接线 |
-| 切块、指纹、查重召回、查询 | `compute/`（目录可新建）。算信号，不改原子身份与状态 |
+| 查重召回、查询 | `compute/`（目录可新建）。算信号，不改原子身份与状态 |
 | 新鲜度因素、合成、权重总表 | [`compute/freshness/AGENTS.md`](src/compute/freshness/AGENTS.md) |
 
 `ops` 改变或筛选原子，或校验一条命令的写入值（含 `compose`）；`compute` 只从已有值计算。同一条规则若在 store / CLI / skill 里再写一遍，删副本、留这里。`compose` 不进 `compute/`。
@@ -24,6 +24,7 @@
 - 只有 `status == active` 是真源。draft / deprecated 与真源同目录，靠 `ops` 过滤，不靠分子目录。
 - Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`freshness.impl-path` 指向活实现（一条或多条路径），不把源文档或代码拷进原子。
 - `Deprecated` 回真源：删除占用该 slug 的文件后重新 `add` 走审。不提供回流。
+- 查重召回：对已有 active 原子的 body 两两字面宽召回，一个对外函数。不把切块或指纹做成第二个公开函数。算法未定前不建空模块。
 
 ## 测试
 

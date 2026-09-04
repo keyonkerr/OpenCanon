@@ -100,7 +100,7 @@ crates/canon-core/src/
 ├── model/                 # 值：Atom 的形状与结构不变量
 ├── lifecycle.rs           # 状态机流转表
 ├── ops/                   # 命令语义：有输入值、无文件（含 compose）
-└── compute/               # 确定性计算：切块、指纹、查重召回、查询、新鲜度信号
+└── compute/               # 确定性计算：查重召回、查询、新鲜度信号
 ```
 
 | 子目录 | 作用 | 扩展时怎么动 |
@@ -178,7 +178,7 @@ crates/opencanon/src/
 | CRUD | `add` `get` `list` `edit` `delete` | 原子存取 |
 | 生命周期 | `active` `deprecate` | 状态流转 |
 | 派生文档 | `compose` | 校验引用并写入 `opencanon/docs/` |
-| 计算 | `chunk` `fingerprint` `dup-candidates` `query` `freshness` | 确定性派生；`freshness` 同时写回 `score` |
+| 计算 | `dup-candidates` `query` `freshness` | 确定性派生；`freshness` 同时写回 `score` |
 
 ### 4.4 `skills/` — 唯一的流程位置
 
@@ -188,8 +188,8 @@ agent 的执行规格。Rust 不读取本目录。改流程不改 crate；改校
 skills/
 ├── opencanon-atomize/SKILL.md  # 原子化：读源 → LLM 拆 → query 召回 → 读实现判定 → 只问剩余 → add/edit → true 再 active
 ├── opencanon-compose/SKILL.md  # 组合：query → LLM 成文 → 按需 compose 写入 docs
-├── dedup.md               # 查重：召回 → LLM 判同 → deprecate
-└── freshness.md           # 新鲜度：信号 → LLM 对照实现 → edit
+├── opencanon-dedup/SKILL.md    # 查重：dup-candidates → LLM 判同 → deprecate
+└── freshness.md                # 新鲜度：信号 → LLM 对照实现 → edit
 ```
 
 skill 是编排的单一源。命令长什么样以 serde 类型为准；skill 只写步骤、卡点、何时调哪条命令，不缓存字段表、不发明错误码、不让 agent 直接写 `opencanon/atoms/` 或 `opencanon/docs/`。
@@ -299,11 +299,11 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 4. 打开 `impl-path` 全文，核 body 与代码是否一致。一致则 `true`（已有原子则可 `auto_edit`）；不一致则 `false` 或不把错误细节写入；无路径或对不上才问人。
 5. 新建的按 skill 模板 `add` 为 draft；`true` 的再 `active`。复用的不 `add`；`auto_edit` 或确认补充则 `edit`。工具不记录与源文档的血缘。
 
-### 7.2 查重（`skills/dedup.md`）
+### 7.2 查重（`skills/opencanon-dedup/SKILL.md`）
 
-机器宽召回，人/agent 精判。误报成本低，漏报成本高。
+机器宽召回，人/agent 精判。误报成本低，漏报成本高。对象是库里已有的 active 原子（无新候选）；入库判同走 §7.1 的 `query --all`。
 
-1. `dup-candidates` 对 active 原子做字面相似度召回（只召回，不判定）。
+1. `dup-candidates` 对 active 原子的 body 做字面宽召回（只召回，不判定）。算法在 `compute/` 一个对外函数里；切块与指纹不是命令。
 2. agent 对每对 `get` 全文，调 LLM 判是否同一事实。
 3. 判定为同：`deprecate` 下线一方；判定为不同：跳过。
 
@@ -341,7 +341,7 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 | md 键序与 kebab-case | store 序列化 |
 | compose 引用闭合、只写 docs | `ops` 的 compose + store `write_doc` |
 | 信封形状、退出码 | CLI `envelope` + 进程入口 |
-| 流程顺序与人审卡点 | `skills/*.md` |
+| 流程顺序与人审卡点 | `skills/<name>/SKILL.md` |
 | 命令载荷与错误码 | serde 类型 + 命令级测试 |
 
 CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不算第二条领域规则。
@@ -358,8 +358,9 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 新流程（已有命令） | 只加 `skills/<name>/SKILL.md` | 任何 crate |
 | 新字段 | `model/` → store 序列化键序 | 在 CLI 特判该字段 |
 | 新状态 | 只改 `lifecycle`，再决定是否加命令 | 在多个 `commands/` 里写流转 |
-| 确定性算法 | `compute/` 新模块 + 对应命令 | 把算法写进 store |
-| 下线 | `deprecate` 命令调已有 `transition`；skill `dedup.md` | 改 activate 兼做下线 |
+| 确定性算法 | `compute/` 新模块 + 对应命令 | 把算法写进 store；把中间步骤做成独立命令 |
+| 库内查重 | `dup-candidates`（`compute/` 一字面宽召回）+ skill `opencanon-dedup` + `deprecate` | 挂 `chunk` / `fingerprint` CLI；为空算法占位 |
+| 下线 | `deprecate` 命令调已有 `transition`；skill `opencanon-dedup` | 改 activate 兼做下线 |
 | 命名空间引导 | `init` + store 建 `opencanon/` 与 `config.yaml`；按同名覆盖复制 skill 到 `.agents/skills/` | 让 `add` 去建 `docs/`；把 `skills/` 写进 `opencanon/`；清空整个 `.agents/skills/` |
 | 组合文档 | layout 加 `docs/`；`ops` 的 compose；store `write_doc`；skill `opencanon-compose` | 把组合结果写回原子正文；`compute/compose.rs`；`topics/` |
 | MCP / HTTP | 新 crate，依赖 core + store | 把 clap 逻辑拷一份 |
@@ -385,6 +386,7 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 磁盘上键序/缺省不对 | store 序列化 |
 | 拆分步骤、人审卡点不对 | `skills/opencanon-atomize/SKILL.md` |
 | 组合文档步骤、引用格式不对 | `skills/opencanon-compose/SKILL.md` |
+| 库内查重步骤、下线哪一方 | `skills/opencanon-dedup/SKILL.md` |
 | 状态不能从 A 到 B | `lifecycle` 一张表 |
 | clap 用法、退出码 2 | CLI 进程入口 |
 | agent 解析失败 | 先看出错 `error.code` 是否稳定；禁止让 agent 解析 `message` |
@@ -428,3 +430,4 @@ core 失败 = 规则坏了。store 失败 = 文件形状坏了。cli 失败 = �
 8. **命令语义在 `canon-core::ops`，不在 CLI。** CLI 只注入 cwd/时钟并渲染信封。
 9. **产品名、CLI 二进制、使用方数据目录统一为 `opencanon`。** 内部 crate 仍为 `canon-core` / `canon-store`；CLI crate 为 `crates/opencanon/`。`skills/` 只在产品树。
 10. **原子 id = `slug`。** `slug` 由 agent 传入；文件名等于 id；全状态占用则 `SLUG_CONFLICT`。见 §6.1。
+11. **查重召回只暴露 `dup-candidates`。** 对已是单事实的 body 做字面宽召回；切块与指纹不是命令。算法未定前不在 `compute/` 占位。语义判定仍在 agent。
