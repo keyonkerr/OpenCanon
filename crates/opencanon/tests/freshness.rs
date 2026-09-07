@@ -66,7 +66,6 @@ fn omit_ids_is_all_active_in_list_order() {
     assert_eq!(data["atoms"][1]["score"], 0.6);
     assert_eq!(factor(&data["atoms"][1], "impl-exists")["kind"], "gate");
     assert_eq!(factor(&data["atoms"][1], "impl-exists")["value"], 1);
-    assert_eq!(factor(&data["atoms"][1], "body-in-impl")["value"], 1);
     assert_eq!(
         factor(&data["atoms"][1], "impl-current")["kind"],
         "weighted"
@@ -112,27 +111,7 @@ fn missing_impl_file_is_zero() {
     assert_eq!(data["atoms"][0]["skipped"], false);
     assert_eq!(data["atoms"][0]["score"], 0);
     assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 0);
-    assert_eq!(factor(&data["atoms"][0], "body-in-impl")["value"], 0);
     assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.0));
-}
-
-#[test]
-fn missing_code_name_is_zero() {
-    let dir = tempdir().unwrap();
-    add_and_active(dir.path());
-    write_impl(dir.path(), "class DurabilityManager {}");
-    let edited = run_stdin(
-        dir.path(),
-        &["edit"],
-        &format!(r#"[{{"id":"{SAMPLE_ID}","body":"see restoreDurability in the manager."}}]"#),
-    );
-    assert_ok(&edited, "edit");
-
-    let output = run(dir.path(), &["freshness", SAMPLE_ID]);
-    let data = assert_ok(&output, "freshness");
-    assert_eq!(data["atoms"][0]["score"], 0);
-    assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 1);
-    assert_eq!(factor(&data["atoms"][0], "body-in-impl")["value"], 0);
 }
 
 #[test]
@@ -233,17 +212,17 @@ fn does_not_read_opencanon_now() {
 }
 
 #[test]
-fn multiple_impl_paths_union_body_tokens() {
+fn multiple_impl_paths_all_exist() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
     write_impl(dir.path(), "class DurabilityManager {}");
     std::fs::create_dir_all(dir.path().join("gamesvr")).unwrap();
-    std::fs::write(dir.path().join("gamesvr").join("Names.java"), "restoreDurability").unwrap();
+    std::fs::write(dir.path().join("gamesvr").join("Names.java"), "").unwrap();
     let edited = run_stdin(
         dir.path(),
         &["edit"],
         &format!(
-            r#"[{{"id":"{SAMPLE_ID}","body":"restoreDurability","freshness":{{"impl-path":["gamesvr/DurabilityManager.java","gamesvr/Names.java"]}}}}]"#
+            r#"[{{"id":"{SAMPLE_ID}","freshness":{{"impl-path":["gamesvr/DurabilityManager.java","gamesvr/Names.java"]}}}}]"#
         ),
     );
     assert_ok(&edited, "edit");
@@ -251,7 +230,6 @@ fn multiple_impl_paths_union_body_tokens() {
     let output = run(dir.path(), &["freshness", SAMPLE_ID]);
     let data = assert_ok(&output, "freshness");
     assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 1);
-    assert_eq!(factor(&data["atoms"][0], "body-in-impl")["value"], 1);
 }
 
 #[test]

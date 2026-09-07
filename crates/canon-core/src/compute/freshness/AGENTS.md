@@ -4,7 +4,7 @@
 
 无 `impl-path`（缺省、空白、或列表空）由调用方 skip，不算分、不写盘。那是语料过滤，不是因素。`impl-path` 可多条。
 
-本 crate 零 IO：exists / `changed_at` / 文件文本由 CLI 注入。
+本 crate 零 IO：exists / `changed_at` 由 CLI 注入。
 
 ## 角色
 

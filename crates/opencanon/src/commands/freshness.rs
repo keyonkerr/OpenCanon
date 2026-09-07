@@ -123,12 +123,10 @@ fn probe(root: &Path, impl_path: &str) -> ImplSnapshot {
     if !dest.is_file() {
         return ImplSnapshot::default();
     }
-    let text = fs::read_to_string(&dest).ok();
     let changed_at = git_changed_at(root, rel).or_else(|| file_mtime(&dest));
     ImplSnapshot {
         exists: true,
         changed_at,
-        text,
     }
 }
 

@@ -81,7 +81,6 @@ mod tests {
     fn any_gate_zero_is_total_zero() {
         let factors = vec![
             Factor::gate("impl-exists", 0.0),
-            Factor::gate("body-in-impl", 1.0),
             Factor::weighted("impl-current", 1.0, 0.40),
         ];
         assert_eq!(combine(&factors).get(), 0.0);
@@ -91,7 +90,6 @@ mod tests {
     fn gates_pass_current_one_is_one() {
         let factors = vec![
             Factor::gate("impl-exists", 1.0),
-            Factor::gate("body-in-impl", 1.0),
             Factor::weighted("impl-current", 1.0, 0.40),
         ];
         assert_eq!(combine(&factors).get(), 1.0);
@@ -101,7 +99,6 @@ mod tests {
     fn gates_pass_current_zero_is_floor() {
         let factors = vec![
             Factor::gate("impl-exists", 1.0),
-            Factor::gate("body-in-impl", 1.0),
             Factor::weighted("impl-current", 0.0, 0.40),
         ];
         assert_eq!(combine(&factors).get(), 0.60);

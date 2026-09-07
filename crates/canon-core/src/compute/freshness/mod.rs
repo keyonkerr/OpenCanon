@@ -11,7 +11,6 @@ pub use combine::{combine, Factor, FactorKind};
 pub struct ImplSnapshot {
     pub exists: bool,
     pub changed_at: Option<Timestamp>,
-    pub text: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,7 +28,7 @@ pub fn evaluate(atom: &Atom, snapshots: &[ImplSnapshot]) -> Option<Evaluation> {
     if !has_impl_path(atom) {
         return None;
     }
-    let mut factors = gate::factors(atom, snapshots);
+    let mut factors = gate::factors(snapshots);
     factors.extend(weighted::factors(atom, snapshots));
     let score = combine::combine(&factors);
     Some(Evaluation { score, factors })
@@ -55,35 +54,30 @@ mod tests {
         }
     }
 
-    fn snap(exists: bool, changed: Option<Timestamp>, text: Option<&str>) -> ImplSnapshot {
+    fn snap(exists: bool, changed: Option<Timestamp>) -> ImplSnapshot {
         ImplSnapshot {
             exists,
             changed_at: changed,
-            text: text.map(str::to_string),
         }
     }
 
     #[test]
     fn skip_without_impl_path() {
         let a = atom("正文", &[], Some("2026-09-01 13:05:00"));
-        assert!(evaluate(&a, &[snap(true, None, Some("x"))]).is_none());
+        assert!(evaluate(&a, &[snap(true, None)]).is_none());
         let blank = atom("正文", &["  "], Some("2026-09-01 13:05:00"));
-        assert!(evaluate(&blank, &[snap(true, None, Some("x"))]).is_none());
+        assert!(evaluate(&blank, &[snap(true, None)]).is_none());
     }
 
     #[test]
-    fn path_ok_impl_still_names_present() {
+    fn path_ok_and_not_newer_than_verified_is_one() {
         let verified = Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0);
         let a = atom(
-            "耐久按日 restoreDurability。",
+            "纯中文。",
             &["gamesvr/DurabilityManager.java"],
             Some("2026-09-01 13:05:00"),
         );
-        let out = evaluate(
-            &a,
-            &[snap(true, Some(verified), Some("void restoreDurability() {}"))],
-        )
-        .unwrap();
+        let out = evaluate(&a, &[snap(true, Some(verified))]).unwrap();
         assert_eq!(out.score.get(), 1.0);
     }
 
@@ -95,26 +89,15 @@ mod tests {
             Some("2026-09-01 13:05:00"),
         );
         let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
-        let out = evaluate(&a, &[snap(true, Some(later), Some(""))]).unwrap();
+        let out = evaluate(&a, &[snap(true, Some(later))]).unwrap();
         assert_eq!(out.score.get(), 0.60);
     }
 
     #[test]
     fn never_verified() {
         let a = atom("纯中文。", &["gamesvr/DurabilityManager.java"], None);
-        let out = evaluate(&a, &[snap(true, None, Some(""))]).unwrap();
+        let out = evaluate(&a, &[snap(true, None)]).unwrap();
         assert_eq!(out.score.get(), 0.60);
-    }
-
-    #[test]
-    fn missing_code_name_is_zero() {
-        let a = atom(
-            "see FooBar and max_hp",
-            &["gamesvr/DurabilityManager.java"],
-            Some("2026-09-01 13:05:00"),
-        );
-        let out = evaluate(&a, &[snap(true, None, Some("max_hp = 1"))]).unwrap();
-        assert_eq!(out.score.get(), 0.0);
     }
 
     #[test]
@@ -124,37 +107,14 @@ mod tests {
             &["gamesvr/DurabilityManager.java"],
             Some("2026-09-01 13:05:00"),
         );
-        let out = evaluate(&a, &[snap(false, None, None)]).unwrap();
+        let out = evaluate(&a, &[snap(false, None)]).unwrap();
         assert_eq!(out.score.get(), 0.0);
-    }
-
-    #[test]
-    fn union_of_files_covers_body_tokens() {
-        let a = atom(
-            "FooBar max_hp",
-            &["a.rs", "b.rs"],
-            Some("2026-09-01 13:05:00"),
-        );
-        let verified = Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0);
-        let out = evaluate(
-            &a,
-            &[
-                snap(true, Some(verified), Some("FooBar")),
-                snap(true, Some(verified), Some("max_hp = 1")),
-            ],
-        )
-        .unwrap();
-        assert_eq!(out.score.get(), 1.0);
     }
 
     #[test]
     fn any_missing_file_is_zero() {
         let a = atom("纯中文。", &["a.rs", "b.rs"], Some("2026-09-01 13:05:00"));
-        let out = evaluate(
-            &a,
-            &[snap(true, None, Some("")), snap(false, None, None)],
-        )
-        .unwrap();
+        let out = evaluate(&a, &[snap(true, None), snap(false, None)]).unwrap();
         assert_eq!(out.score.get(), 0.0);
     }
 
@@ -165,10 +125,7 @@ mod tests {
         let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
         let out = evaluate(
             &a,
-            &[
-                snap(true, Some(verified), Some("")),
-                snap(true, Some(later), Some("")),
-            ],
+            &[snap(true, Some(verified)), snap(true, Some(later))],
         )
         .unwrap();
         assert_eq!(out.score.get(), 0.60);
