@@ -203,6 +203,11 @@ mod tests {
             .join("references")
             .join("query.md")
             .exists());
+        assert!(skills
+            .join("opencanon-compose")
+            .join("references")
+            .join("query.md")
+            .exists());
         assert!(!stale.join("stale.md").exists());
     }
 

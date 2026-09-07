@@ -192,6 +192,8 @@ skills/
 └── freshness.md                # 新鲜度：信号 → LLM 对照实现 → edit
 ```
 
+`opencanon-atomize` 与 `opencanon-compose` 各带同文 `references/query.md`（抽词与 `query` 调用）；种子与是否 `--all` 写在各自 `SKILL.md`。
+
 skill 是编排的单一源。命令长什么样以 serde 类型为准；skill 只写步骤、卡点、何时调哪条命令，不缓存字段表、不发明错误码、不让 agent 直接写 `opencanon/atoms/` 或 `opencanon/docs/`。
 
 ---
@@ -385,6 +387,7 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 转正时 freshness 写错 | `canon-core` 的 activate |
 | 磁盘上键序/缺省不对 | store 序列化 |
 | 拆分步骤、人审卡点不对 | `skills/opencanon-atomize/SKILL.md` |
+| 抽词或 `query` 调用约定不对 | 各 skill 同文的 `references/query.md`（两份一起改） |
 | 组合文档步骤、引用格式不对 | `skills/opencanon-compose/SKILL.md` |
 | 库内查重步骤、下线哪一方 | `skills/opencanon-dedup/SKILL.md` |
 | 状态不能从 A 到 B | `lifecycle` 一张表 |

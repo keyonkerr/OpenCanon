@@ -14,6 +14,8 @@ agent 的执行规格，编排的唯一位置。改流程只改本目录；改�
 
 产品 skill 的 `name` 用 `opencanon-` 前缀，后面跟能力的英文（如 `opencanon-atomize`）。
 
+凡用 `query` 召回的产品 skill，各目录下 `references/query.md` **须同文**（抽词与调用约定）。改这一段时两份一起改。不要用 `../` 链到另一条 skill，也不要 `skills/shared/`。种子、是否 `--all`、命中之后（判同 / 取材）写在各自 `SKILL.md` 本步。
+
 ## 代码读不出来的卡点
 
 - 源文档在命令面之外：opencanon 不读、不写源文件。agent 自读全文；原子化结束后在主张段末写入指向 `opencanon/atoms/<id>.md` 的真源链接，主张正文不动。
