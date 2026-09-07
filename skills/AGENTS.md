@@ -14,7 +14,7 @@ agent 的执行规格，编排的唯一位置。改流程只改本目录；改�
 
 产品 skill 的 `name` 用 `opencanon-` 前缀，后面跟能力的英文（如 `opencanon-atomize`）。
 
-凡用 `query` 召回的产品 skill，各目录下 `references/query.md` **须同文**（抽词与调用约定）。改这一段时两份一起改。不要用 `../` 链到另一条 skill，也不要 `skills/shared/`。种子、是否 `--all`、命中之后（判同 / 取材）写在各自 `SKILL.md` 本步。
+凡用 `query` 召回的产品 skill，各目录下 `references/query.md` **须同文**（抽词、调用 `query`、对命中里的 active 调 `freshness`）。改这一段时两份一起改。不要用 `../` 链到另一条 skill，也不要 `skills/shared/`。种子、是否 `--all`、命中之后（判同 / 取材）写在各自 `SKILL.md` 本步。打分只传 active 的 id，禁止省略 id（省略会打全库）。
 
 ## 代码读不出来的卡点
 

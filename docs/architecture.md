@@ -192,7 +192,7 @@ skills/
 └── freshness.md                # 新鲜度：信号 → LLM 对照实现 → edit
 ```
 
-`opencanon-atomize` 与 `opencanon-compose` 各带同文 `references/query.md`（抽词与 `query` 调用）；种子与是否 `--all` 写在各自 `SKILL.md`。
+`opencanon-atomize` 与 `opencanon-compose` 各带同文 `references/query.md`（抽词、`query`、对命中 active 打分）；种子与是否 `--all` 写在各自 `SKILL.md`。
 
 skill 是编排的单一源。命令长什么样以 serde 类型为准；skill 只写步骤、卡点、何时调哪条命令，不缓存字段表、不发明错误码、不让 agent 直接写 `opencanon/atoms/` 或 `opencanon/docs/`。
 
@@ -297,7 +297,7 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 1. 人指定源文档；agent 自读全文（命令面不碰源文件；结束后在主张段末加真源链接）。
 2. agent 调 LLM 拆成候选单事实（先不落盘）。
-3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；LLM 判是否同一事实，不准才问人。同则复用，不新建。
+3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；对命中里的 active 调 `freshness` 写回粗分；LLM 判是否同一事实，不准才问人。同则复用，不新建。
 4. 打开 `impl-path` 全文，核 body 与代码是否一致。一致则 `true`（已有原子则可 `auto_edit`）；不一致则 `false` 或不把错误细节写入；无路径或对不上才问人。
 5. 新建的按 skill 模板 `add` 为 draft；`true` 的再 `active`。复用的不 `add`；`auto_edit` 或确认补充则 `edit`。工具不记录与源文档的血缘。
 
@@ -313,15 +313,15 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 用 active 原子回答用户的问题，整理成可读文档。LLM 可调语序、写摘要，不得改变真源语义；每段末尾引用原子。无需人审。
 
-1. 读 `locales`，按英语 ∪ locales 从问题扩词后 `query`（默认 active）；agent 丢掉不回答该问的命中。零命中可再扩一轮同义词；仍零则不编文。
+1. 读 `locales`，按英语 ∪ locales 从问题扩词后 `query`（默认 active）；对命中调 `freshness` 写回粗分；agent 丢掉不回答该问的命中。零命中可再扩一轮同义词；仍零则不编文。
 2. LLM 成文。用户要求落盘时 `compose` 校验引用并写入 `opencanon/docs/`；结果不写回原子正文。别处若要出现该文，只放指向 `opencanon/docs/` 的链接。
 
 ### 7.4 新鲜度（`skills/freshness.md`）
 
 新鲜度无法从文档自身算出，必须对照当前实现。
 
-1. `freshness` 写回相对当前实现的机器粗分（因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)）。
-2. 对低于阈值者，agent 取原子内容与 `impl-path` 指向的实现，调 LLM 确认是否仍符合现状。（未做）
+1. 按需打分走召回内核（`query` 命中里的 active 再 `freshness <id...>`，禁止省略 id）。省略 id 的全库 `freshness` 仍可用。因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)。
+2. 对低于阈值者，agent 取原子内容与 `impl-path` 指向的实现，调 LLM 确认是否仍符合现状。（未做；不塞进 atomize / compose）
 3. 仍符合：`edit` 更新 `last-verified`；已过时：人改内容后再 `edit`。（未做）
 
 ---
@@ -387,7 +387,7 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 转正时 freshness 写错 | `canon-core` 的 activate |
 | 磁盘上键序/缺省不对 | store 序列化 |
 | 拆分步骤、人审卡点不对 | `skills/opencanon-atomize/SKILL.md` |
-| 抽词或 `query` 调用约定不对 | 各 skill 同文的 `references/query.md`（两份一起改） |
+| 抽词、`query` 或命中后打分不对 | 各 skill 同文的 `references/query.md`（两份一起改） |
 | 组合文档步骤、引用格式不对 | `skills/opencanon-compose/SKILL.md` |
 | 库内查重步骤、下线哪一方 | `skills/opencanon-dedup/SKILL.md` |
 | 状态不能从 A 到 B | `lifecycle` 一张表 |

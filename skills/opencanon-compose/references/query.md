@@ -1,6 +1,6 @@
 # 抽词与 query
 
-本文件只写抽词与调用。种子、过滤、命中之后由本 skill 的 `SKILL.md` 本步给出。
+本文件写抽词、调用 `query`、以及对命中里的 active 打分。种子、是否 `--all`、判同/取材由本 skill 的 `SKILL.md` 本步给出。
 
 ## 抽词
 
@@ -37,4 +37,22 @@ opencanon query [--all] durability restore 查重 durability_daily_restore
 
 `data.atoms[]` 每项是库中已有原子的完整内容（含 `body`），留在会话。
 
-零命中：按英语 + `locales` 再扩一轮同义词后重 query。仍零则回到 SKILL 本步写明的完成条件。不要改去 `list` 全库。
+零命中：按英语 + `locales` 再扩一轮同义词后重 query。仍零则回到 SKILL 本步写明的完成条件，不调 `freshness`。不要改去 `list` 全库。
+
+## 对命中打分
+
+`query` 与 `freshness` 各是一次独立进程：磁盘上的 `score` 不会自动覆盖会话里已留下的命中。必须按下面铺回，否则后续步骤仍拿着打分前的旧分。不要为了对齐分数再 `query` / `get` 一遍全文（body 未改）。不抄因素表、不写阈值、不 `edit`、不调 LLM。
+
+1. 只收集命中里 `status == active` 的 `id`，去重、保持命中顺序。draft / deprecated 不准传入（指定非 active 会整批 `VALIDATION_FAILED`）。
+2. 该列表为空：不调 `freshness`，会话命中保持 `query` 原样。
+3. 调用（禁止省略 id，省略会打全库）：
+
+```
+opencanon freshness id1 id2 ...
+```
+
+argv 过长则分批，规则同 `query`。失败则本步失败，不带着过期分继续。
+
+4. 按 `id` 把信封铺回会话中的命中：
+   - `skipped: true`：不算分、不写盘；保留 `query` 带来的 freshness
+   - `skipped: false`：用信封的 `score` 覆盖该 hit 的 `freshness.score`；`factors` 留在会话

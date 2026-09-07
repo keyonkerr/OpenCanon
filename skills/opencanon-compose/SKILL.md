@@ -16,7 +16,7 @@ compatibility: Requires the `opencanon` CLI.
 
 种子是用户问题全文；问题里出现的原子 id 并进 keywords。过滤：默认只扫 active，不要加 `--all`。
 
-按 [references/query.md](references/query.md) 抽词并调用。
+按 [references/query.md](references/query.md) 抽词、调用并给命中里的 active 打分。
 
 零命中且同义词再查仍零：停止，告诉用户库中没有相关真源，不编文。
 
@@ -24,13 +24,13 @@ compatibility: Requires the `opencanon` CLI.
 
 ## 2. 取材
 
-只保留与问题相关的命中。丢掉不回答该问的原子。需要全文时用命中里已有的 `body`，不够再 `opencanon get <id>`。
+只保留与问题相关的命中。丢掉不回答该问的原子。不要因 `score` 低而丢掉真源。需要全文时用命中里已有的 `body`，不够再 `opencanon get <id>`。
 
 完成：一份相关原子列表，每条都有 `id`、`title`、`body`，且都出现在步骤 1 的命中里。
 
 ## 3. 成文
 
-只依据这些原子的 `body`。可调语序、合并句子、在文首写摘要。不得引入原子里没有的事实，不得反转主张。
+只依据这些原子的 `body`。可调语序、合并句子、在文首写摘要。不得引入原子里没有的事实，不得反转主张。不把 `score` 写进派生文档。
 
 正文格式见 [references/citations.md](references/citations.md)。`slug` 从标题按 [references/compose-stdin.md](references/compose-stdin.md) 的规则写成，组 stdin 前自检合法。
 

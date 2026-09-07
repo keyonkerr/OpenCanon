@@ -81,11 +81,11 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 ## 3. 召回并判是否同一事实
 
-本步不写盘。种子是本批候选的 `title` / `body`、源里已出现的别名、本批每条 `slug`。把 slug 并进 keywords，以便占名召回：id 等于 slug 的已有原子一定出现在命中里。过滤：`query --all`（含 draft 与 deprecated，避免与未审或已下线的同名文件漏判）。
+除 `freshness` 写回 `score` 外不改 body/状态。种子是本批候选的 `title` / `body`、源里已出现的别名、本批每条 `slug`。把 slug 并进 keywords，以便占名召回：id 等于 slug 的已有原子一定出现在命中里。过滤：`query --all`（含 draft 与 deprecated，避免与未审或已下线的同名文件漏判）。
 
-按 [references/query.md](references/query.md) 抽词并调用。
+按 [references/query.md](references/query.md) 抽词、调用并给命中里的 active 打分。
 
-比对的是**正文是否同一件事**：该候选的 `body`（本篇刚拆出的主张）对 `query` 命中的已有原子 `body`。只用这两边的 `body`。slug 与某 hit 的 `id` 相同仍要判同，禁止「同 slug 就自动合并」。
+比对的是**正文是否同一件事**：该候选的 `body`（本篇刚拆出的主张）对 `query` 命中的已有原子 `body`。只用这两边的 `body`，不以 `score` 为准。slug 与某 hit 的 `id` 相同仍要判同，禁止「同 slug 就自动合并」。
 
 无命中或目录为空：每条候选标 `different`。
 
