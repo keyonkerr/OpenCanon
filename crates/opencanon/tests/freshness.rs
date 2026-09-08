@@ -77,7 +77,7 @@ fn omit_ids_is_all_active_in_list_order() {
 }
 
 #[test]
-fn chinese_body_and_future_verified_is_one() {
+fn future_verified_does_not_raise_floor() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
     write_impl(dir.path(), "class DurabilityManager {}");
@@ -96,10 +96,31 @@ fn chinese_body_and_future_verified_is_one() {
     let output = run(dir.path(), &["freshness", SAMPLE_ID]);
     let data = assert_ok(&output, "freshness");
     assert_eq!(data["count"], 1);
-    assert_eq!(data["updated-count"], 1);
-    assert_eq!(data["atoms"][0]["score"], 1);
+    assert_eq!(data["updated-count"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0.6);
     assert_eq!(factor(&data["atoms"][0], "impl-current")["value"], 1);
-    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(1.0));
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.6));
+}
+
+#[test]
+fn zero_is_not_raised_to_floor() {
+    let dir = tempdir().unwrap();
+    add_and_active(dir.path());
+    write_impl(dir.path(), "class DurabilityManager {}");
+    let edited = run_stdin(
+        dir.path(),
+        &["edit"],
+        &format!(r#"[{{"id":"{SAMPLE_ID}","freshness":{{"score":0}}}}]"#),
+    );
+    assert_ok(&edited, "edit");
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.0));
+
+    let output = run(dir.path(), &["freshness", SAMPLE_ID]);
+    let data = assert_ok(&output, "freshness");
+    assert_eq!(data["updated-count"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0);
+    assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 1);
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.0));
 }
 
 #[test]

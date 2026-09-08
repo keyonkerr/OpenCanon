@@ -16,7 +16,7 @@ compatibility: Requires the `opencanon` CLI.
 
 种子是用户问题全文；问题里出现的原子 id 并进 keywords。过滤：默认只扫 active，不要加 `--all`。
 
-按 [references/query.md](references/query.md) 抽词、调用并给命中里的 active 打分。
+按 [references/query.md](references/query.md) 抽词、调用、给命中里的 active 打分并做真实性终审。
 
 零命中且同义词再查仍零：停止，告诉用户库中没有相关真源，不编文。
 
@@ -24,9 +24,9 @@ compatibility: Requires the `opencanon` CLI.
 
 ## 2. 取材
 
-只保留与问题相关的命中。丢掉不回答该问的原子。不要因 `score` 低而丢掉真源。需要全文时用命中里已有的 `body`，不够再 `opencanon get <id>`。
+只保留与问题相关的命中。丢掉不回答该问的原子。`score == 0` 不当现行真源，不取材。不要因终审前的 0.60 丢掉尚未判定的命中（`query.md` 结束后 0.60 不应还在）。成文只用落盘 `score == 1` 的原子。需要全文时用命中里已有的 `body`，不够再 `opencanon get <id>`。
 
-完成：一份相关原子列表，每条都有 `id`、`title`、`body`，且都出现在步骤 1 的命中里。
+完成：一份相关原子列表，每条都有 `id`、`title`、`body`，都出现在步骤 1 的命中里，且落盘 `score == 1`。
 
 ## 3. 成文
 

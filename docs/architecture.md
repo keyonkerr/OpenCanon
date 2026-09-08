@@ -2,7 +2,7 @@
 
 ## 0. 定位
 
-**OpenCanon（CLI：`opencanon`）是确定性的文档原子库。** agent 是驱动方与 LLM 调用方；真源只存在于 `opencanon/atoms/` 里 `status: active` 的文件，且只能经 `opencanon` 写入。
+**OpenCanon（CLI：`opencanon`）是确定性的文档原子库。** agent 是驱动方与 LLM 调用方；真源只存在于 `opencanon/atoms/` 里 `status: active` 的文件，且只能经 `opencanon` 写入。（[真源：OpenCanon 是确定性的文档原子库：确定性归 CLI、语义归 LLM、编排归 skill，人审只做卡点批复](../opencanon/atoms/role_division.md) · [真源：真源是 `opencanon/atoms/` 中 `status: active` 的原子，消费类能力默认只作用于 active](../opencanon/atoms/active_atoms_are_truth.md)）
 
 | 角色 | 职责 | 不碰 |
 |------|------|------|
@@ -10,11 +10,13 @@
 | agent | 读 skill、调 LLM、按顺序调命令 | 直接写 `opencanon/atoms/`、`opencanon/docs/`、改源文档 |
 | 人 | 指定源文档；仅在 LLM 无法核对时批复转正 | — |
 
+（[真源：OpenCanon 是确定性的文档原子库：确定性归 CLI、语义归 LLM、编排归 skill，人审只做卡点批复](../opencanon/atoms/role_division.md)）
+
 ---
 
 ## 1. 两棵目录树
 
-源码树和被治理的数据树不是同一棵。混在一起会把「工具怎么长」和「真源怎么长」写成同一套规则。
+源码树和被治理的数据树不是同一棵。混在一起会把「工具怎么长」和「真源怎么长」写成同一套规则。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
 
 ```
 产品树（本仓，随 git 版本走）                真源树（被治理项目 cwd，随业务走）
@@ -30,19 +32,21 @@ docs/       人/agent 读的说明（kebab-case）
 | CLI 二进制与 crate | `opencanon`、`canon-core`、`canon-store` |
 | 使用方数据命名空间 | `<cwd>/opencanon/`（可见目录；给人审、给 git 看，不用点目录） |
 
-- **产品树**回答：工具如何实现、如何扩展命令与流程。
-- **真源树**回答：事实存在哪、谁可以写、什么算真源。全部托管数据收在 `opencanon/` 下，避免 `atoms/`、`docs/` 直接铺在使用方仓库根上。
-- 真源树不进产品仓。产品仓忽略根上的 `/opencanon/`，避免在工具仓里跑命令得到套娃路径 `opencanon/opencanon/atoms/`。
-- `opencanon` 打开的 `root` 永远是进程当前工作目录，没有 `--root`。原子路径由 store 拼为 `root/opencanon/atoms/<id>.md`。
-- `skills/` 只在产品树：随 CLI 发布，不复制进使用方 `opencanon/`。`init` 把产品 skill 按同名覆盖安装到 cwd 下 `.agents/skills/`。
-- 源文档（被拆的旧 md）在两棵树之外：命令面不读、不写；agent 用自身读文件能力取全文。
-- `docs/` 文件一律 kebab-case，不加 `doc-` 前缀（已在目录里）。当前：架构 `architecture.md`，痛点与思路 `why.md`；决策需要独立演进时再落到 `adr/<nnnn>-<title>.md`。命令与信封以 `crates/opencanon/AGENTS.md` 与 serde 类型为准，不另开契约副本。
+（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+
+- **产品树**回答：工具如何实现、如何扩展命令与流程。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+- **真源树**回答：事实存在哪、谁可以写、什么算真源。全部托管数据收在 `opencanon/` 下，避免 `atoms/`、`docs/` 直接铺在使用方仓库根上。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+- 真源树不进产品仓。产品仓忽略根上的 `/opencanon/`，避免在工具仓里跑命令得到套娃路径 `opencanon/opencanon/atoms/`。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+- `opencanon` 打开的 `root` 永远是进程当前工作目录，没有 `--root`。原子路径由 store 拼为 `root/opencanon/atoms/<id>.md`。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+- `skills/` 只在产品树：随 CLI 发布，不复制进使用方 `opencanon/`。`init` 把产品 skill 按同名覆盖安装到 cwd 下 `.agents/skills/`。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md) · [真源：`opencanon init`：建 `opencanon/` 命名空间、写 `config.yaml`、把产品 skill 覆盖安装到 `.agents/skills/`](../opencanon/atoms/init_command.md)）
+- 源文档（被拆的旧 md）在两棵树之外：命令面不读、不写；agent 用自身读文件能力取全文。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+- `docs/` 文件一律 kebab-case，不加 `doc-` 前缀（已在目录里）。当前：架构 `architecture.md`，痛点与思路 `why.md`；决策需要独立演进时再落到 `adr/<nnnn>-<title>.md`。命令与信封以 `crates/opencanon/AGENTS.md` 与 serde 类型为准，不另开契约副本。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md) · [真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
 
 ---
 
 ## 2. 单一性
 
-解耦不是多几个 crate，而是让下面五条各自只有一处可以发生。目录拆分是这五条的物理形式。
+解耦不是多几个 crate，而是让下面五条各自只有一处可以发生。目录拆分是这五条的物理形式。（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
 
 | # | 单一性 | 唯一发生地 | 挡住第二处 |
 |---|--------|------------|------------|
@@ -52,7 +56,9 @@ docs/       人/agent 读的说明（kebab-case）
 | 4 | 唯一编排 | `skills/*.md` | Rust 无 pipeline、无 LLM、不读 skill 文件 |
 | 5 | 唯一契约源 | `opencanon` crate 里的 serde 返回类型 | 不维护独立 JSON Schema；命令级测试锁结构 |
 
-若某条规则在 CLI、store、skill 里再写一遍，改一处必漏。发现重复时，删副本、留 `canon-core`。
+（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
+
+若某条规则在 CLI、store、skill 里再写一遍，改一处必漏。发现重复时，删副本、留 `canon-core`。（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
 
 ---
 
@@ -81,11 +87,11 @@ opencanon (cli) ──► canon-store ──► canon-core
      └────────────────────────────────┘
 ```
 
-- `canon-core` 不知道文件、不知道 clap。
-- `canon-store` 不知道命令名、不知道信封；只认识 `Atom`。
-- `opencanon`（cli）认识命令，但不算领域结果：它把 stdin/flag 交给 `ops`，把 `Atom` 交给 store，把结果收进信封。
+- `canon-core` 不知道文件、不知道 clap。（[真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md)）
+- `canon-store` 不知道命令名、不知道信封；只认识 `Atom`。（[真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md)）
+- `opencanon`（cli）认识命令，但不算领域结果：它把 stdin/flag 交给 `ops`，把 `Atom` 交给 store，把结果收进信封。（[真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md)）
 
-不为假想的第二存储或第二协议预抽 trait。出现第二个实现再抽接缝。
+不为假想的第二存储或第二协议预抽 trait。出现第二个实现再抽接缝。（[真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md)）
 
 ---
 
@@ -93,7 +99,7 @@ opencanon (cli) ──► canon-store ──► canon-core
 
 ### 4.1 `canon-core` — 规则与计算的唯一位置
 
-零 IO。不读文件系统、不读时钟、不读环境变量。需要时间戳的函数由调用方注入。
+零 IO。不读文件系统、不读时钟、不读环境变量。需要时间戳的函数由调用方注入。（[真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md)）
 
 ```
 crates/canon-core/src/
@@ -110,13 +116,15 @@ crates/canon-core/src/
 | `ops/` | 一条命令对应一个纯函数（或一对 validate + apply） | 新命令先在这里长出函数，CLI 再接线 |
 | `compute/` | 确定性算法 | 新算法一个模块、一个对外函数；不在这里读 `opencanon/atoms/` |
 
-`ops` 把领域动作藏在函数后面（强制 draft、字段合并、转正戳记、按状态过滤、compose 校验派生文档）。CLI 只看到输入值与结果值。
+（[真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md)）
 
-`compute` 与 `ops` 的分界：`ops` 改变或筛选原子，或校验一条命令的写入值；`compute` 从已有值算出信号。`compose` 在 `ops/`，不进 `compute/`。
+`ops` 把领域动作藏在函数后面（强制 draft、字段合并、转正戳记、按状态过滤、compose 校验派生文档）。CLI 只看到输入值与结果值。（[真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md)）
+
+`compute` 与 `ops` 的分界：`ops` 改变或筛选原子，或校验一条命令的写入值；`compute` 从已有值算出信号。`compose` 在 `ops/`，不进 `compute/`。（[真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md)）
 
 ### 4.2 `canon-store` — 唯一碰磁盘的地方
 
-只做翻译：`Atom` ↔ `opencanon/atoms/<id>.md`，`ComposedDoc` ↔ `opencanon/docs/<id>.md`。不判断 status 该不该变，不合并 freshness，不分配 id，不校验 compose 引用。
+只做翻译：`Atom` ↔ `opencanon/atoms/<id>.md`，`ComposedDoc` ↔ `opencanon/docs/<id>.md`。不判断 status 该不该变，不合并 freshness，不分配 id，不校验 compose 引用。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
 
 ```
 crates/canon-store/src/
@@ -127,11 +135,11 @@ crates/canon-store/src/
 └── error.rs
 ```
 
-公开能力保持浅：打开一个 `root`，对原子做写、读、删、列，对派生文档做写、读。列在目录不存在时视为空。读路径永不创建目录；写原子在需要时创建 `opencanon/atoms/`（必要时先建 `opencanon/`）；写派生文档在需要时创建 `opencanon/docs/`。
+公开能力保持浅：打开一个 `root`，对原子做写、读、删、列，对派生文档做写、读。列在目录不存在时视为空。读路径永不创建目录；写原子在需要时创建 `opencanon/atoms/`（必要时先建 `opencanon/`）；写派生文档在需要时创建 `opencanon/docs/`。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
 
-写入约定：同目录临时文件 → fsync → rename。目标已存在时先移走再替换，保证覆盖可移植。
+写入约定：同目录临时文件 → fsync → rename。目标已存在时先移走再替换，保证覆盖可移植。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
 
-整批 `add` / `edit` 的「先校验再写」不是文件系统事务：`ops` 把整批变成一组 `Atom`，CLI 再逐条写入。崩溃导致部分落盘可接受；不为此引入 journal。需要跨文件事务时再加独立机制。
+整批 `add` / `edit` 的「先校验再写」不是文件系统事务：`ops` 把整批变成一组 `Atom`，CLI 再逐条写入。崩溃导致部分落盘可接受；不为此引入 journal。需要跨文件事务时再加独立机制。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
 
 | 文件 | 作用 | 扩展时怎么动 |
 |------|------|--------------|
@@ -140,9 +148,11 @@ crates/canon-store/src/
 | `serialize_doc` | 派生文档 md 模板的唯一处 | 派生文档键只改这里 |
 | `io` | 原子写与目录扫描 | 派生文档用 `write_doc` / `read_doc` |
 
+（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
+
 ### 4.3 `opencanon` crate — 唯一的进程入口
 
-薄层。允许：解析 argv / stdin、注入 cwd 与本地时钟、调 `ops` / `compute` 与 `Store`、渲染信封、设退出码。不允许：重写 freshness 合并、手写 status 流转、拼 YAML。
+薄层。允许：解析 argv / stdin、注入 cwd 与本地时钟、调 `ops` / `compute` 与 `Store`、渲染信封、设退出码。不允许：重写 freshness 合并、手写 status 流转、拼 YAML。（[真源：`opencanon` crate：唯一进程入口，薄层——解析、注入、编排 IO、渲染信封](../opencanon/atoms/cli_crate_layout.md)）
 
 ```
 crates/opencanon/src/
@@ -159,7 +169,7 @@ crates/opencanon/src/
 2. 读：需要旧值则 `store` 读单条或列全量。`add` 总是列已有原子（供 slug 占用检查）。
 3. 算：`canon-core` 的 `ops` / `compute`（注入 `now`）。任一条失败 → 整批不写。
 4. 写：`store` 写或删。
-5. 渲染 `data`，退出 0。
+5. 渲染 `data`，退出 0。（[真源：`opencanon` crate：唯一进程入口，薄层——解析、注入、编排 IO、渲染信封](../opencanon/atoms/cli_crate_layout.md)）
 
 | 文件 | 作用 | 扩展时怎么动 |
 |------|------|--------------|
@@ -167,9 +177,11 @@ crates/opencanon/src/
 | `commands/*` | 一命令一文件 | 新命令：先 `ops` 或 `compute`，再新文件，再挂 clap |
 | `help` / `version` | 非 JSON 出口 | 成功时无信封；clap 用法错误仍走退出码 2 / stderr |
 
-退出码：`0` 成功（有信封，`ok: true`）／ `1` 业务失败（信封含 `error.code`）／ `2` clap 用法错误（无信封）。
+（[真源：`opencanon` crate：唯一进程入口，薄层——解析、注入、编排 IO、渲染信封](../opencanon/atoms/cli_crate_layout.md)）
 
-命令按职责分组，不按落地批次分组：
+退出码：`0` 成功（有信封，`ok: true`）／ `1` 业务失败（信封含 `error.code`）／ `2` clap 用法错误（无信封）。（[真源：`opencanon` crate：唯一进程入口，薄层——解析、注入、编排 IO、渲染信封](../opencanon/atoms/cli_crate_layout.md)）
+
+命令按职责分组，不按落地批次分组：（[真源：`opencanon` crate：唯一进程入口，薄层——解析、注入、编排 IO、渲染信封](../opencanon/atoms/cli_crate_layout.md)）
 
 | 组 | 命令 | 职责 |
 |----|------|------|
@@ -178,29 +190,30 @@ crates/opencanon/src/
 | CRUD | `add` `get` `list` `edit` `delete` | 原子存取 |
 | 生命周期 | `active` `deprecate` | 状态流转 |
 | 派生文档 | `compose` | 校验引用并写入 `opencanon/docs/` |
-| 计算 | `dup-candidates` `query` `freshness` | 确定性派生；`freshness` 同时写回 `score` |
+| 计算 | `dup-candidates` `query` `freshness` | 确定性派生；`freshness` 写回 `score` 只降不升 |
+
+（[真源：`opencanon init`：建 `opencanon/` 命名空间、写 `config.yaml`、把产品 skill 覆盖安装到 `.agents/skills/`](../opencanon/atoms/init_command.md) · [真源：组合流程：用 active 原子回答问题时 LLM 成文，落盘只经 `compose` 写入 `opencanon/docs/`](../opencanon/atoms/compose_flow.md) · [真源：新鲜度：对照当前实现的机器粗分，`freshness` 写回 `score` 只降不升](../opencanon/atoms/freshness_scoring.md) · [真源：查重：`dup-candidates` 字面宽召回 + agent 判是否同一事实，同则 `deprecate` 一方](../opencanon/atoms/dedup_flow.md) · [真源：状态机：合法流转仅 `Draft → Active` 与 `Active → Deprecated`，不提供回流](../opencanon/atoms/status_lifecycle.md) · [真源：真源是 `opencanon/atoms/` 中 `status: active` 的原子，消费类能力默认只作用于 active](../opencanon/atoms/active_atoms_are_truth.md)）
 
 ### 4.4 `skills/` — 唯一的流程位置
 
-agent 的执行规格。Rust 不读取本目录。改流程不改 crate；改校验不改 skill。
+agent 的执行规格。Rust 不读取本目录。改流程不改 crate；改校验不改 skill。（[真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
 
 ```
 skills/
-├── opencanon-atomize/SKILL.md  # 原子化：读源 → LLM 拆 → query 召回 → 读实现判定 → 只问剩余 → add/edit → true 再 active
-├── opencanon-compose/SKILL.md  # 组合：query → LLM 成文 → 按需 compose 写入 docs
-├── opencanon-dedup/SKILL.md    # 查重：dup-candidates → LLM 判同 → deprecate
-└── freshness.md                # 新鲜度：信号 → LLM 对照实现 → edit
+├── opencanon-atomize/SKILL.md  # 原子化：读源 → LLM 拆 → query 召回（含打分与终审）→ 读实现判定 → 只问剩余 → add/edit → true 再 active
+├── opencanon-compose/SKILL.md  # 组合：query（含打分与终审）→ LLM 成文 → 按需 compose 写入 docs
+└── opencanon-dedup/SKILL.md    # 查重：dup-candidates → LLM 判同 → deprecate
 ```
 
-`opencanon-atomize` 与 `opencanon-compose` 各带同文 `references/query.md`（抽词、`query`、对命中 active 打分）；种子与是否 `--all` 写在各自 `SKILL.md`。
+`opencanon-atomize` 与 `opencanon-compose` 各带同文 `references/query.md`（抽词、`query`、对命中 active 打分、按落盘分真实性终审）；种子与是否 `--all` 写在各自 `SKILL.md`。不另开新鲜度 skill。（[真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
 
-skill 是编排的单一源。命令长什么样以 serde 类型为准；skill 只写步骤、卡点、何时调哪条命令，不缓存字段表、不发明错误码、不让 agent 直接写 `opencanon/atoms/` 或 `opencanon/docs/`。
+skill 是编排的单一源。命令长什么样以 serde 类型为准；skill 只写步骤、卡点、何时调哪条命令，不缓存字段表、不发明错误码、不让 agent 直接写 `opencanon/atoms/` 或 `opencanon/docs/`。（[真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
 
 ---
 
 ## 5. 真源树
 
-真源树在被治理项目的 cwd，不是本仓子目录。`Store` 以进程当前工作目录为 `root`。全部托管数据在 `opencanon/` 命名空间下。
+真源树在被治理项目的 cwd，不是本仓子目录。`Store` 以进程当前工作目录为 `root`。全部托管数据在 `opencanon/` 命名空间下。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
 
 ```
 <root>/                            # 进程 cwd（被治理项目根）
@@ -220,17 +233,19 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 | `opencanon/atoms/*.md` | frontmatter + 正文 | 同上 |
 | `opencanon/docs/` | 派生可读文档 | store 经 `compose` |
 
-`opencanon/atoms/` 不存在时，读命令当空或未找到，不创建目录。第一次成功写入原子才创建。第一次成功 `compose` 才创建 `opencanon/docs/`。`init` 预先建出命名空间（含 `atoms/` 与 `config.yaml`），并把产品 skill 按同名覆盖复制到 `.agents/skills/`，不把 `skills/` 写进 `opencanon/`。
+（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md) · [真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md) · [真源：`opencanon init`：建 `opencanon/` 命名空间、写 `config.yaml`、把产品 skill 覆盖安装到 `.agents/skills/`](../opencanon/atoms/init_command.md) · [真源：组合流程：用 active 原子回答问题时 LLM 成文，落盘只经 `compose` 写入 `opencanon/docs/`](../opencanon/atoms/compose_flow.md)）
 
-文件内容 = YAML frontmatter + 正文。正文是 `body`，不进 frontmatter。键 kebab-case，顺序固定：`id` → `status` → `title` → `tags` → `freshness`。`freshness` 始终出现；其子键有则写、无则省略；三个都没有时为空对象。
+`opencanon/atoms/` 不存在时，读命令当空或未找到，不创建目录。第一次成功写入原子才创建。第一次成功 `compose` 才创建 `opencanon/docs/`。`init` 预先建出命名空间（含 `atoms/` 与 `config.yaml`），并把产品 skill 按同名覆盖复制到 `.agents/skills/`，不把 `skills/` 写进 `opencanon/`。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md) · [真源：`opencanon init`：建 `opencanon/` 命名空间、写 `config.yaml`、把产品 skill 覆盖安装到 `.agents/skills/`](../opencanon/atoms/init_command.md)）
 
-源文档路径、旧 wiki、实现代码不是真源树的一部分。`freshness.impl-path` 只是对照指针，不把代码拷进 `opencanon/atoms/`。
+文件内容 = YAML frontmatter + 正文。正文是 `body`，不进 frontmatter。键 kebab-case，顺序固定：`id` → `status` → `title` → `tags` → `freshness`。`freshness` 始终出现；其子键有则写、无则省略；三个都没有时为空对象。（[真源：`canon-store`：`Atom` / `ComposedDoc` 与磁盘文件之间的翻译层](../opencanon/atoms/canon_store_layout.md)）
+
+源文档路径、旧 wiki、实现代码不是真源树的一部分。`freshness.impl-path` 只是对照指针，不把代码拷进 `opencanon/atoms/`。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
 
 ---
 
 ## 6. 领域模型与状态机
 
-原子是唯一带状态机的领域实体。派生可读文档（`ComposedDoc`）无 `status`，不是真源，只经 `compose` 写入 `opencanon/docs/`。字段语义：
+原子是唯一带状态机的领域实体。派生可读文档（`ComposedDoc`）无 `status`，不是真源，只经 `compose` 写入 `opencanon/docs/`。字段语义：（[真源：原子是唯一带状态机的领域实体；字段：`id` / `status` / `title` / `tags` / `freshness` / `body`](../opencanon/atoms/atom_fields.md)）
 
 | 字段 | 含义 |
 |------|------|
@@ -238,14 +253,16 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 | `status` | `draft` / `active` / `deprecated`；只有 `active` 是真源 |
 | `title` | 一句话概括该事实；与 `body` 均非空 |
 | `tags` | 分类；`query` 对 tags 做子串匹配（与 id / title / body 相同） |
-| `freshness` | `last-verified`（上次确认仍成立的本地时间）、`impl-path`（对照实现相对路径）、`score`（机器粗分，由 `opencanon freshness` 写回）；皆可缺省 |
+| `freshness` | `last-verified`（上次确认仍成立的本地时间）、`impl-path`（对照实现相对路径）、`score`（主张是否仍真实：1 可用、0 不可用、0.60 尚未终审；`freshness` 写回只降不升，升到 1 或终审 0 走 `edit`）；皆可缺省 |
 | `body` | 单事实正文，自包含 |
 
-`slug` 只出现在 `add` 入参里，用来作为 id，**不是**独立持久字段，不另进 frontmatter。
+（[真源：原子是唯一带状态机的领域实体；字段：`id` / `status` / `title` / `tags` / `freshness` / `body`](../opencanon/atoms/atom_fields.md)）
+
+`slug` 只出现在 `add` 入参里，用来作为 id，**不是**独立持久字段，不另进 frontmatter。（[真源：原子是唯一带状态机的领域实体；字段：`id` / `status` / `title` / `tags` / `freshness` / `body`](../opencanon/atoms/atom_fields.md)）
 
 ### 6.1 原子 ID
 
-`id` 是句柄，不是 title，也不是内容指纹。无 `ATOM-` 前缀。文件名等于 `id`。形状就是 slug：
+`id` 是句柄，不是 title，也不是内容指纹。无 `ATOM-` 前缀。文件名等于 `id`。形状就是 slug：（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
 
 ```
 <slug>
@@ -253,17 +270,17 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
 
 例：`durability_daily_restore` → `opencanon/atoms/durability_daily_restore.md`
 
-`slug` 由 agent 在 `add` JSON 里传入（默认小写英文词，词间 `_`；工具不再从 title 计算）。校验：非空；1–32 个 Unicode scalar；不含 `<>:"/\|?*`；首尾不是空白、`.` 或 `_`。`_` 允许，作词分隔。不合法 → `VALIDATION_FAILED`，不静默改写。
+`slug` 由 agent 在 `add` JSON 里传入（默认小写英文词，词间 `_`；工具不再从 title 计算）。校验：非空；1–32 个 Unicode scalar；不含 `<>:"/\|?*`；首尾不是空白、`.` 或 `_`。`_` 允许，作词分隔。不合法 → `VALIDATION_FAILED`，不静默改写。（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
 
-占用（已占用集合由 CLI 从 store 列出的 `id → status` 注入；`canon-core` 不读盘）：
+占用（已占用集合由 CLI 从 store 列出的 `id → status` 注入；`canon-core` 不读盘）：（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
 
 1. id = slug。draft / active / deprecated 都占这个名字。
 2. 本批内部重复、或与磁盘已有 id 相同 → `SLUG_CONFLICT`，整批不写；一次带全量冲突。
-3. 改 title 不改 id。`edit` 不改 slug。
+3. 改 title 不改 id。`edit` 不改 slug。（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
 
-是否同一事实由查重流程判断；`add` 只保证 slug/id 唯一。
+是否同一事实由查重流程判断；`add` 只保证 slug/id 唯一。（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
 
-`add` 忽略输入中的 `id` / `status`，必填 `slug` / `title` / `body`，强制 `draft`。`edit` 对 `tags` 整键替换、对 `freshness` 子键合并，且不可改 `status` 与 `id`。`active` 在流转之外写入 `last-verified` 与 `score = 1`，保留已有 `impl-path`。
+`add` 忽略输入中的 `id` / `status`，必填 `slug` / `title` / `body`，强制 `draft`。`edit` 对 `tags` 整键替换、对 `freshness` 子键合并，且不可改 `status` 与 `id`。`active` 在流转之外写入 `last-verified` 与 `score = 1`，保留已有 `impl-path`。（[真源：写命令的字段语义：`add` 强制 draft，`edit` 替换 tags、合并 freshness 子键，`active` 戳记](../opencanon/atoms/write_command_field_rules.md)）
 
 状态机：
 
@@ -274,15 +291,15 @@ skill 是编排的单一源。命令长什么样以 serde 类型为准；skill �
                  └──────── 审不通过：delete ───────────────┘
 ```
 
-合法流转仅 `Draft → Active`、`Active → Deprecated`。其余由 `lifecycle` 判为非法流转。`Deprecated` 回真源：重新 `add` 走审，不提供回流。
+合法流转仅 `Draft → Active`、`Active → Deprecated`。其余由 `lifecycle` 判为非法流转。`Deprecated` 回真源：重新 `add` 走审，不提供回流。（[真源：状态机：合法流转仅 `Draft → Active` 与 `Active → Deprecated`，不提供回流](../opencanon/atoms/status_lifecycle.md)）
 
-消费类能力（组合、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `id`、`title`、`tags` 与 `body` 做子串召回，命中返回完整原子。`compose` 只接受 `atoms` 均为 active 的派生文档。
+消费类能力（组合、查询、查重召回、新鲜度信号）默认只作用于 `active`。`list` 与 `query` 共用状态过滤：省略 = active；`--status draft|active|deprecated`；`--all`。`query` 对 `id`、`title`、`tags` 与 `body` 做子串召回，命中返回完整原子。`compose` 只接受 `atoms` 均为 active 的派生文档。（[真源：真源是 `opencanon/atoms/` 中 `status: active` 的原子，消费类能力默认只作用于 active](../opencanon/atoms/active_atoms_are_truth.md)）
 
 ---
 
 ## 7. 流程编排
 
-Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。四条主流程共用同一套命令面，互不把步骤写进 crate。
+Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。四条主流程共用同一套命令面，互不把步骤写进 crate。（[真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
 
 ```
 人 ──指定源/批复──► agent ──读 skill──► 按序调用
@@ -293,42 +310,42 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 
 ### 7.1 原子化（`skills/opencanon-atomize/SKILL.md`）
 
-把一篇多事实源文档变成多条单事实原子。body 与代码事实一致则写入并转正；无法对照才问人，且问在落盘前。
+把一篇多事实源文档变成多条单事实原子。body 与代码事实一致则写入并转正；无法对照才问人，且问在落盘前。（[真源：原子化流程：读源 → LLM 拆 → query 召回判同 → 对照实现 → 只问剩余 → add/edit → true 再 active](../opencanon/atoms/atomize_flow.md)）
 
 1. 人指定源文档；agent 自读全文（命令面不碰源文件；结束后在主张段末加真源链接）。
 2. agent 调 LLM 拆成候选单事实（先不落盘）。
-3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；对命中里的 active 调 `freshness` 写回粗分；LLM 判是否同一事实，不准才问人。同则复用，不新建。
+3. 读 `opencanon/config.yaml` 的 `locales`；按英语（默认，不能少）∪ locales 扩词，再 `query --all`；对命中里的 active 调 `freshness`（写回只降不升）；按落盘分 LLM/人终审（0.60 对照实现；真实则 `edit` `last-verified` 与 `score = 1`，不真实则 `edit` `score = 0`）。再 LLM 判是否同一事实，不准才问人。同则复用，不新建。`score == 0` 的 hit 不当现行真源去合并。
 4. 打开 `impl-path` 全文，核 body 与代码是否一致。一致则 `true`（已有原子则可 `auto_edit`）；不一致则 `false` 或不把错误细节写入；无路径或对不上才问人。
-5. 新建的按 skill 模板 `add` 为 draft；`true` 的再 `active`。复用的不 `add`；`auto_edit` 或确认补充则 `edit`。工具不记录与源文档的血缘。
+5. 新建的按 skill 模板 `add` 为 draft；`true` 的再 `active`。复用的不 `add`；`auto_edit` 或确认补充则 `edit`。工具不记录与源文档的血缘。（[真源：原子化流程：读源 → LLM 拆 → query 召回判同 → 对照实现 → 只问剩余 → add/edit → true 再 active](../opencanon/atoms/atomize_flow.md)）
 
 ### 7.2 查重（`skills/opencanon-dedup/SKILL.md`）
 
-机器宽召回，人/agent 精判。误报成本低，漏报成本高。对象是库里已有的 active 原子（无新候选）；入库判同走 §7.1 的 `query --all`。
+机器宽召回，人/agent 精判。误报成本低，漏报成本高。对象是库里已有的 active 原子（无新候选）；入库判同走 §7.1 的 `query --all`。（[真源：查重：`dup-candidates` 字面宽召回 + agent 判是否同一事实，同则 `deprecate` 一方](../opencanon/atoms/dedup_flow.md)）
 
 1. `dup-candidates` 对 active 原子的 body 做字面宽召回（只召回，不判定）。算法在 `compute/` 一个对外函数里；切块与指纹不是命令。
 2. agent 对每对 `get` 全文，调 LLM 判是否同一事实。
-3. 判定为同：`deprecate` 下线一方；判定为不同：跳过。
+3. 判定为同：`deprecate` 下线一方；判定为不同：跳过。（[真源：查重：`dup-candidates` 字面宽召回 + agent 判是否同一事实，同则 `deprecate` 一方](../opencanon/atoms/dedup_flow.md)）
 
 ### 7.3 组合（`skills/opencanon-compose/SKILL.md`）
 
-用 active 原子回答用户的问题，整理成可读文档。LLM 可调语序、写摘要，不得改变真源语义；每段末尾引用原子。无需人审。
+用 active 原子回答用户的问题，整理成可读文档。LLM 可调语序、写摘要，不得改变真源语义；每段末尾引用原子。无需人审。（[真源：组合流程：用 active 原子回答问题时 LLM 成文，落盘只经 `compose` 写入 `opencanon/docs/`](../opencanon/atoms/compose_flow.md)）
 
-1. 读 `locales`，按英语 ∪ locales 从问题扩词后 `query`（默认 active）；对命中调 `freshness` 写回粗分；agent 丢掉不回答该问的命中。零命中可再扩一轮同义词；仍零则不编文。
-2. LLM 成文。用户要求落盘时 `compose` 校验引用并写入 `opencanon/docs/`；结果不写回原子正文。别处若要出现该文，只放指向 `opencanon/docs/` 的链接。
+1. 读 `locales`，按英语 ∪ locales 从问题扩词后 `query`（默认 active）；对命中调 `freshness`（写回只降不升）并按落盘分终审。agent 丢掉不回答该问的命中，以及 `score == 0` 的命中。零命中可再扩一轮同义词；仍零则不编文。成文只用 `score == 1`。
+2. LLM 成文。用户要求落盘时 `compose` 校验引用并写入 `opencanon/docs/`；结果不写回原子正文。别处若要出现该文，只放指向 `opencanon/docs/` 的链接。（[真源：组合流程：用 active 原子回答问题时 LLM 成文，落盘只经 `compose` 写入 `opencanon/docs/`](../opencanon/atoms/compose_flow.md)）
 
-### 7.4 新鲜度（`skills/freshness.md`）
+### 7.4 召回时的新鲜度（`references/query.md`，无独立 skill）
 
-新鲜度无法从文档自身算出，必须对照当前实现。
+新鲜度无法从文档自身算出，必须对照当前实现。不另开 `freshness.md`。（[真源：新鲜度：对照当前实现的机器粗分，`freshness` 写回 `score` 只降不升](../opencanon/atoms/freshness_scoring.md)）
 
-1. 按需打分走召回内核（`query` 命中里的 active 再 `freshness <id...>`，禁止省略 id）。省略 id 的全库 `freshness` 仍可用。因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)。
-2. 对低于阈值者，agent 取原子内容与 `impl-path` 指向的实现，调 LLM 确认是否仍符合现状。（未做；不塞进 atomize / compose）
-3. 仍符合：`edit` 更新 `last-verified`；已过时：人改内容后再 `edit`。（未做）
+1. 按需打分走召回内核（`query` 命中里的 active 再 `freshness <id...>`，禁止省略 id）。省略 id 的全库 `freshness` 仍可用。因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)。写回见 `ops::apply_score`：只降不升；信封 `score` 是钳制后的落盘值。
+2. 闸门看落盘分：`1` 不问 LLM；`0` 不当现行真源、不再问；`0.60` 由 LLM 对照 `impl-path`（判断不了则问人）。`skipped` 问人。
+3. 真实：`edit` 写入 `last-verified` 与 `score = 1`。不真实：`edit` `score = 0`。不要靠再跑 `freshness` 把分抬高。不改 body。（[真源：新鲜度：对照当前实现的机器粗分，`freshness` 写回 `score` 只降不升](../opencanon/atoms/freshness_scoring.md)）
 
 ---
 
 ## 8. 规则落点
 
-「这件事该改哪个模块」只允许有一行答案。
+「这件事该改哪个模块」只允许有一行答案。（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
 
 | 规则 | 落点 |
 |------|------|
@@ -338,6 +355,7 @@ Rust 只提供原子能力；流程在 `skills/`，由 agent 按文档执行。�
 | tags 替换 vs freshness 子键合并 | `ops` 的 edit |
 | `status` 不可经 edit 改 | `ops` 的 edit |
 | Draft→Active + 戳 last-verified/score | `ops` 的 activate（内部调 `lifecycle`） |
+| `freshness` 写回 `score` 只降不升 | `ops` 的 apply_score |
 | 合法流转表 | `lifecycle` |
 | list / query 默认只 active；`--status` / `--all` | `ops` 的 `ListFilter` |
 | md 键序与 kebab-case | store 序列化 |
@@ -352,7 +370,7 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 
 ## 9. 扩展
 
-每一种变化只走一条通道。新增能力时先问：这是规则、存储、接口，还是编排？
+每一种变化只走一条通道。新增能力时先问：这是规则、存储、接口，还是编排？（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
 
 | 要做的事 | 动哪些目录 | 不动 |
 |----------|------------|------|
@@ -369,11 +387,13 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 第二存储 | 此时才抽仓储 trait；文件系统与另一实现两个适配器 | 预先加空端口层 |
 | 语义查重 | agent 调 LLM；opencanon 最多存/取向量字段 | Rust 引 embedding 运行时 |
 
+（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md) · [真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md) · [真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md) · [真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md) · [真源：`opencanon init`：建 `opencanon/` 命名空间、写 `config.yaml`、把产品 skill 覆盖安装到 `.agents/skills/`](../opencanon/atoms/init_command.md) · [真源：查重：`dup-candidates` 字面宽召回 + agent 判是否同一事实，同则 `deprecate` 一方](../opencanon/atoms/dedup_flow.md) · [真源：组合流程：用 active 原子回答问题时 LLM 成文，落盘只经 `compose` 写入 `opencanon/docs/`](../opencanon/atoms/compose_flow.md)）
+
 扩展检查：
 
 1. 新规则有没有第二处副本？
 2. 新流程有没有在 Rust 里写死步骤？
-3. 有没有为假想的第二存储/第二 LLM 抽 trait？
+3. 有没有为假想的第二存储/第二 LLM 抽 trait？（[真源：单一性：每种规则只有一处发生地，每种变化只走一条扩展通道](../opencanon/atoms/single_place_per_rule.md)）
 
 ---
 
@@ -387,26 +407,27 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | 转正时 freshness 写错 | `canon-core` 的 activate |
 | 磁盘上键序/缺省不对 | store 序列化 |
 | 拆分步骤、人审卡点不对 | `skills/opencanon-atomize/SKILL.md` |
-| 抽词、`query` 或命中后打分不对 | 各 skill 同文的 `references/query.md`（两份一起改） |
+| 抽词、`query`、命中后打分或真实性终审不对 | 各 skill 同文的 `references/query.md`（两份一起改） |
+| `freshness` 把已有 `score` 抬高了 | `canon-core` 的 `apply_score` |
 | 组合文档步骤、引用格式不对 | `skills/opencanon-compose/SKILL.md` |
 | 库内查重步骤、下线哪一方 | `skills/opencanon-dedup/SKILL.md` |
 | 状态不能从 A 到 B | `lifecycle` 一张表 |
 | clap 用法、退出码 2 | CLI 进程入口 |
 | agent 解析失败 | 先看出错 `error.code` 是否稳定；禁止让 agent 解析 `message` |
 
-对调用方（agent）稳定的是：子命令名、stdin JSON、stdout 信封、`error.code`、原子文件形状。
+对调用方（agent）稳定的是：子命令名、stdin JSON、stdout 信封、`error.code`、原子文件形状。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
 
-对维护者可换的是：`ops` 内部算法、store 的临时文件名、clap 写法。换这些不得改变上一句。id **等于 slug** 且全状态唯一，是契约，不可暗换。
+对维护者可换的是：`ops` 内部算法、store 的临时文件名、clap 写法。换这些不得改变上一句。id **等于 slug** 且全状态唯一，是契约，不可暗换。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
 
 防腐：
 
-- **输出即契约。** 不另维护 Schema 文件。命令级测试断言信封与 `data` 形状。
-- **skill 不缓存 schema。** 字段以命令面类型为准。两者开始漂移时再给版本通道，而不是在每条 skill 里抄一份字段表。
-- **依赖面零 LLM / http。** 新依赖先过这一刀。
+- **输出即契约。** 不另维护 Schema 文件。命令级测试断言信封与 `data` 形状。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
+- **skill 不缓存 schema。** 字段以命令面类型为准。两者开始漂移时再给版本通道，而不是在每条 skill 里抄一份字段表。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md) · [真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
+- **依赖面零 LLM / http。** 新依赖先过这一刀。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
 
 ### 10.2 测试对着模块接口写
 
-测试不穿过接缝去断言对方的私有格式。
+测试不穿过接缝去断言对方的私有格式。（[真源：测试对着模块接口写：core 测规则、store 测文件形状、CLI 测契约](../opencanon/atoms/testing_by_layer.md)）
 
 | 层 | 测什么 | 依赖 |
 |----|--------|------|
@@ -415,22 +436,24 @@ CLI 编排整批原子性（先 `ops` 全部成功，再写入）算胶水，不
 | CLI | 退出码 + 信封 + `data`；每个 `error.code` | 临时 cwd 跑二进制 |
 | 流程级 | skill 规定的命令序列（不经 LLM） | 夹具 |
 
-core 失败 = 规则坏了。store 失败 = 文件形状坏了。cli 失败 = 契约坏了。不要用 cli 测试去覆盖 core 已测过的合并表。
+（[真源：测试对着模块接口写：core 测规则、store 测文件形状、CLI 测契约](../opencanon/atoms/testing_by_layer.md)）
+
+core 失败 = 规则坏了。store 失败 = 文件形状坏了。cli 失败 = 契约坏了。不要用 cli 测试去覆盖 core 已测过的合并表。（[真源：测试对着模块接口写：core 测规则、store 测文件形状、CLI 测契约](../opencanon/atoms/testing_by_layer.md)）
 
 ---
 
 ## 11. 架构决策
 
-需要独立演进（争议、选项、后果）时再落到 `docs/adr/<nnnn>-<short-title>.md`。当前有效：
+需要独立演进（争议、选项、后果）时再落到 `docs/adr/<nnnn>-<short-title>.md`。当前有效：（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
 
-1. **Rust 不调 LLM。** 语义判定在 agent。CLI 保持确定性、零 LLM 依赖。
-2. **流程在 `skills/`，命令在 `opencanon`。** 编排与原子能力分开扩展。
-3. **原文件只读；`canon-store` 是 `opencanon/atoms/` 唯一写入口。**
-4. **原子全在 `opencanon/atoms/`，用 `status` 区分真源。** 不设 `pending/`。
-5. **三 crate，存储单实现，不预置端口 trait。** 第二实现出现再抽接缝。
-6. **契约真源 = serde 类型 + 命令级测试。** 不单独维护 JSON Schema。
-7. **不追踪血缘。** `Atom` 无 `source`；`keywords` 并入 `tags`；无 `manifest`。`impl-path` 留在 freshness，指向活实现。
-8. **命令语义在 `canon-core::ops`，不在 CLI。** CLI 只注入 cwd/时钟并渲染信封。
-9. **产品名、CLI 二进制、使用方数据目录统一为 `opencanon`。** 内部 crate 仍为 `canon-core` / `canon-store`；CLI crate 为 `crates/opencanon/`。`skills/` 只在产品树。
-10. **原子 id = `slug`。** `slug` 由 agent 传入；文件名等于 id；全状态占用则 `SLUG_CONFLICT`。见 §6.1。
-11. **查重召回只暴露 `dup-candidates`。** 对已是单事实的 body 做字面宽召回；切块与指纹不是命令。算法未定前不在 `compute/` 占位。语义判定仍在 agent。
+1. **Rust 不调 LLM。** 语义判定在 agent。CLI 保持确定性、零 LLM 依赖。（[真源：OpenCanon 是确定性的文档原子库：确定性归 CLI、语义归 LLM、编排归 skill，人审只做卡点批复](../opencanon/atoms/role_division.md)）
+2. **流程在 `skills/`，命令在 `opencanon`。** 编排与原子能力分开扩展。（[真源：`skills/`：流程编排的唯一位置，agent 的执行规格](../opencanon/atoms/skills_are_pipelines.md)）
+3. **原文件只读；`canon-store` 是 `opencanon/atoms/` 唯一写入口。**（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md) · [真源：真源是 `opencanon/atoms/` 中 `status: active` 的原子，消费类能力默认只作用于 active](../opencanon/atoms/active_atoms_are_truth.md)）
+4. **原子全在 `opencanon/atoms/`，用 `status` 区分真源。** 不设 `pending/`。（[真源：真源是 `opencanon/atoms/` 中 `status: active` 的原子，消费类能力默认只作用于 active](../opencanon/atoms/active_atoms_are_truth.md)）
+5. **三 crate，存储单实现，不预置端口 trait。** 第二实现出现再抽接缝。（[真源：三 crate 分层：`canon-core` 领域、`canon-store` 存储、`opencanon` 接口，依赖单向菱形](../opencanon/atoms/three_crate_layering.md)）
+6. **契约真源 = serde 类型 + 命令级测试。** 不单独维护 JSON Schema。（[真源：契约真源是 serde 类型加命令级测试；对 agent 稳定的是命令面与 `error.code`](../opencanon/atoms/contract_stability.md)）
+7. **不追踪血缘。** `Atom` 无 `source`；`keywords` 并入 `tags`；无 `manifest`。`impl-path` 留在 freshness，指向活实现。（[真源：原子是唯一带状态机的领域实体；字段：`id` / `status` / `title` / `tags` / `freshness` / `body`](../opencanon/atoms/atom_fields.md)）
+8. **命令语义在 `canon-core::ops`，不在 CLI。** CLI 只注入 cwd/时钟并渲染信封。（[真源：`canon-core`：领域规则与确定性计算的唯一位置，零 IO](../opencanon/atoms/canon_core_layout.md)）
+9. **产品名、CLI 二进制、使用方数据目录统一为 `opencanon`。** 内部 crate 仍为 `canon-core` / `canon-store`；CLI crate 为 `crates/opencanon/`。`skills/` 只在产品树。（[真源：产品树与真源树是两棵目录树：托管数据收在使用方 cwd 的 `opencanon/` 下](../opencanon/atoms/two_directory_trees.md)）
+10. **原子 id = `slug`。** `slug` 由 agent 传入；文件名等于 id；全状态占用则 `SLUG_CONFLICT`。见 §6.1。（[真源：原子 id 等于 `add` 传入的 `slug`：全状态占用，`SLUG_CONFLICT` 整批不写](../opencanon/atoms/atom_id_is_slug.md)）
+11. **查重召回只暴露 `dup-candidates`。** 对已是单事实的 body 做字面宽召回；切块与指纹不是命令。算法未定前不在 `compute/` 占位。语义判定仍在 agent。（[真源：查重：`dup-candidates` 字面宽召回 + agent 判是否同一事实，同则 `deprecate` 一方](../opencanon/atoms/dedup_flow.md)）

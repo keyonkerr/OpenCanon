@@ -123,11 +123,7 @@ mod tests {
         let a = atom("纯中文。", &["a.rs", "b.rs"], Some("2026-09-01 13:05:00"));
         let verified = Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0);
         let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
-        let out = evaluate(
-            &a,
-            &[snap(true, Some(verified)), snap(true, Some(later))],
-        )
-        .unwrap();
+        let out = evaluate(&a, &[snap(true, Some(verified)), snap(true, Some(later))]).unwrap();
         assert_eq!(out.score.get(), 0.60);
     }
 }

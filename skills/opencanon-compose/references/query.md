@@ -1,6 +1,6 @@
 # 抽词与 query
 
-本文件写抽词、调用 `query`、以及对命中里的 active 打分。种子、是否 `--all`、判同/取材由本 skill 的 `SKILL.md` 本步给出。
+本文件写抽词、调用 `query`、对命中里的 active 打分，以及按落盘分做真实性终审。种子、是否 `--all`、判同/取材由本 skill 的 `SKILL.md` 本步给出。
 
 ## 抽词
 
@@ -41,7 +41,9 @@ opencanon query [--all] durability restore 查重 durability_daily_restore
 
 ## 对命中打分
 
-`query` 与 `freshness` 各是一次独立进程：磁盘上的 `score` 不会自动覆盖会话里已留下的命中。必须按下面铺回，否则后续步骤仍拿着打分前的旧分。不要为了对齐分数再 `query` / `get` 一遍全文（body 未改）。不抄因素表、不写阈值、不 `edit`、不调 LLM。
+`query` 与 `freshness` 各是一次独立进程：磁盘上的 `score` 不会自动覆盖会话里已留下的命中。必须按下面铺回，否则后续步骤仍拿着打分前的旧分。不要为了对齐分数再 `query` / `get` 一遍全文（body 未改）。不抄因素表、不把 0.7 一类阈值写入 `config.yaml`。
+
+`score` 表示主张是否仍真实。`opencanon freshness` 只把分**降低**（`min(已有, 合成)`）；无已有分则写入合成值。信封里的 `score` 已是钳制后的落盘值，不是未钳制的合成。升高到 1、或终审为不真实写成 0，只走下面的 `edit`，不要再跑 `freshness` 指望升分。
 
 1. 只收集命中里 `status == active` 的 `id`，去重、保持命中顺序。draft / deprecated 不准传入（指定非 active 会整批 `VALIDATION_FAILED`）。
 2. 该列表为空：不调 `freshness`，会话命中保持 `query` 原样。
@@ -56,3 +58,50 @@ argv 过长则分批，规则同 `query`。失败则本步失败，不带着过�
 4. 按 `id` 把信封铺回会话中的命中：
    - `skipped: true`：不算分、不写盘；保留 `query` 带来的 freshness
    - `skipped: false`：用信封的 `score` 覆盖该 hit 的 `freshness.score`；`factors` 留在会话
+
+## 真实性终审
+
+闸门看铺回后的**落盘分**，不看未钳制合成。不以 CLI 的 0.60 当成已经假或已经真。
+
+- **0：** 已终审不真，或 CLI 因对照文件缺失降到不可用。不当现行真源，**不再送 LLM**。
+- **1：** 可用。不问 LLM。
+- **0.60：** 可能不真、尚未终审。打开该 hit 的 `impl-path` 里每一个文件，按 body 分块核对应文件（一致 / 不一致 / 无法对照，口径同原子化对照实现：各块对得上且代码无相反行为才算仍符合）。
+- **skipped（无 `impl-path`）：** 无法对照实现。问人：真实 / 不真实。不要对着不存在的文件调模型去「证实」。
+
+0.60 的三分：
+
+- **仍符合：** 真实。
+- **已过时（不一致）：** 不真实。
+- **无法对照：** 问人（真实 / 不真实）。文件读不到同此。
+
+全部相关题目都有选择之前，不组下面的 `edit`。真实（LLM 或人）可代行；不真实可代行写 0，**不改 body**（正文怎么改仍要人来）。
+
+真实：一次 `edit`，本机本地墙钟 `YYYY-MM-DD HH:MM:SS`：
+
+```json
+[
+  {
+    "id": "durability_daily_restore",
+    "freshness": {
+      "last-verified": "2026-09-08 11:00:00",
+      "score": 1
+    }
+  }
+]
+```
+
+不真实：
+
+```json
+[
+  {
+    "id": "durability_daily_restore",
+    "freshness": { "score": 0 }
+  }
+]
+```
+
+调用 `opencanon edit`（stdin 与原子化相同：UTF-8 文件重定向）。`VALIDATION_FAILED` 时按 `error.details.index` 改那条，重试全数组。不要传与当前不同的 `status`。
+
+完成：每个 active 命中的落盘 `score` 是 `0`、`1`，或仍为 skipped（人尚未选）。0.60 不得带入后续判同 / 取材。
+

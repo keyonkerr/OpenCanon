@@ -29,6 +29,7 @@ pub fn run(store: &Store, ids: &[String]) -> Result<Value, CliError> {
         let snapshots: Vec<_> = paths.iter().map(|path| probe(store.root(), path)).collect();
         let evaluation = freshness::evaluate(&atom, &snapshots).expect("impl-path present");
         let next = ops::apply_score(atom.clone(), evaluation.score);
+        let persisted = next.freshness.score.expect("apply_score always sets score");
         if !ops::score_unchanged(&atom, &next) {
             store
                 .write(&next)
@@ -38,7 +39,7 @@ pub fn run(store: &Store, ids: &[String]) -> Result<Value, CliError> {
         rows.push(json!({
             "id": atom.id,
             "skipped": false,
-            "score": evaluation.score,
+            "score": persisted,
             "factors": factors_json(&evaluation.factors),
         }));
     }

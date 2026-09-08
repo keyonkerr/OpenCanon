@@ -236,4 +236,3 @@ mod tests {
         assert!(ImplPaths::from("  ").is_empty());
     }
 }
-
