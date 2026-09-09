@@ -4,6 +4,10 @@ Deterministic document atom store. The agent drives the work and calls the LLM. 
 
 The product tree (this repo) is not the true-source tree. True source is `status: active` files under `opencanon/atoms/` in the governed project's cwd. `skills/` ships with the CLI and is not written into the consumer's `opencanon/`. `init` installs product skills into `.agents/skills/` by same-name overwrite.
 
+## Purpose
+
+Record each fact once, in the atom store. Atomize splits a source document into that store: dedupe against existing atoms, check claims against the implementation; promote to `active` when they match, do not ingest when they do not, ask a human when they cannot be checked. The store grows one document at a time. At use time, read only from the atom store (compose); do not treat the old document as living true source. After write, atomize appends a true-source link at the end of each claim paragraph and leaves the claim text unchanged. It does not archive, rewrite, or close out the source file, and it does not run compose.
+
 ## Where to change
 
 Read that module's `AGENTS.md` before editing. Each rule has one place it may occur; delete copies and keep `canon-core`.
