@@ -40,7 +40,7 @@
 | agent | 读 skill、自读源文件与实现、调 LLM、按序调命令；原子化结束后在源主张段末加真源链接 |
 | `opencanon` | 校验、落盘、流转、子串召回、新鲜度粗分 |
 
-agent 把结构化 JSON 交给命令。`opencanon/atoms/` 与 `opencanon/docs/` 不手改。源文档（被拆的旧 md）在命令面之外：CLI 不读、不写。
+agent 把结构化 JSON 交给命令。原子的增删改查只经 `opencanon`；`opencanon/atoms/` 与 `opencanon/docs/` 不手读、不手改。源文档（被拆的旧 md）在命令面之外：CLI 不读、不写。
 
 ---
 

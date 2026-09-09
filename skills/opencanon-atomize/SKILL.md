@@ -12,6 +12,8 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 把指定的一篇多事实文档拆成单事实原子。对照库中已有原子：同一事实则合并进该原子（有新细节则 `edit`）；否则作为新原子。有独立证据则写入并转正，否则人审后 `add`。
 
+原子的增删改查只经 `opencanon`。对照已有原子走步骤 3 的 `query`（正文以信封为准）；写入走步骤 7 的命令。源文档与 `impl-path` 仍自读。
+
 ## 1. 按原文抽出候选
 
 只在本次会话里拆。先不组命令 JSON，也不把候选、关键字、命中或判定写成文件。本步允许暂时过细；跨节合并在步骤 2。只使用本篇已覆盖的片段；人指定的若是摘要，真源也只含摘要宽度。更细文档以后原子化时走判同 + `edit`，不要本篇发明细节。
@@ -89,9 +91,9 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 `freshness.score == 0.00` 的 hit 不得作为 `same <id>` 的合并目标（不当现行真源）。正文像同一件事则标 `unsure` 问人，或 `different` 后新建。
 
-无命中或目录为空：每条候选标 `different`。
+无命中：每条候选标 `different`。
 
-无命中或目录为空：每条候选标 `different`。
+无命中：每条候选标 `different`。
 
 有命中：只对与该候选同一主题的 hit 标号；每条候选至多一个 `same`：
 

@@ -35,9 +35,9 @@ opencanon query [--all] durability restore 查重 durability_daily_restore
 - 至少一个 keyword。
 - argv 过长则把列表切成多批，每批一次 `query`，命中按 `id` 去重合并。
 
-`data.atoms[]` 每项是库中已有原子的完整内容（含 `body`），留在会话。
+`data.atoms[]` 每项是库中已有原子的完整内容（含 `body`），留在会话。原子正文只来自本信封；需要单条再 `opencanon get <id>`。
 
-零命中：按英语 + `locales` 再扩一轮同义词后重 query。仍零则回到 SKILL 本步写明的完成条件，不调 `freshness`。不要改去 `list` 全库。
+零命中：按英语 + `locales` 再扩一轮同义词后重 query。仍零则回到 SKILL 本步写明的完成条件，不调 `freshness`。不要改去 `list` 全库，也不要读、列 `opencanon/atoms/`。
 
 ## 对命中打分
 

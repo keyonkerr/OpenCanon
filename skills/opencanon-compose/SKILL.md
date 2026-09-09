@@ -10,7 +10,7 @@ compatibility: Requires the `opencanon` CLI.
 
 # opencanon-compose
 
-用库中 `active` 原子回答用户的问题，整理成一篇可读文档。成员只来自本次 `query` 命中。成文可调语序、写摘要，不得改变原子语义。落盘只经 `opencanon compose` 写入 `opencanon/docs/`。
+用库中 `active` 原子回答用户的问题，整理成一篇可读文档。原子的增删改查只经 `opencanon`：成员只来自本次 `query` 命中（不够再 `get`）。成文可调语序、写摘要，不得改变原子语义。落盘只经 `opencanon compose` 写入 `opencanon/docs/`。
 
 ## 1. 召回
 
@@ -42,4 +42,4 @@ compatibility: Requires the `opencanon` CLI.
 - 用户只要会话里看到：展示 `body`，不调 `compose`。
 - 用户要求写到别处：先 `compose` 落盘，再在目标文件插入指向 `opencanon/docs/<id>.md` 的 markdown 链接，不把正文复制过去。
 
-`opencanon/docs/` 与 `opencanon/atoms/` 只经命令写入。`VALIDATION_FAILED` 时按 `error.details.field` 改正文或 `atoms` 后重试同一对象。`ATOM_NOT_FOUND` 时回到步骤 2，只用当前命中里仍存在的 id。
+`opencanon/atoms/` 只经命令读写；`opencanon/docs/` 只经 `compose` 写入。`VALIDATION_FAILED` 时按 `error.details.field` 改正文或 `atoms` 后重试同一对象。`ATOM_NOT_FOUND` 时回到步骤 2，只用当前命中里仍存在的 id。
