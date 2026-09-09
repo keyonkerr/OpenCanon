@@ -8,27 +8,24 @@ pub struct Score(f64);
 
 impl Score {
     pub fn one() -> Self {
-        Self(1.0)
+        Self::new(1.0)
     }
 
     pub fn new(value: f64) -> Self {
-        Self(value)
+        let rounded = if value.is_finite() {
+            (value.clamp(0.0, 1.0) * 100.0).round() / 100.0
+        } else {
+            0.0
+        };
+        Self(rounded)
     }
 
     pub fn get(self) -> f64 {
         self.0
     }
 
-    pub fn is_integer(self) -> bool {
-        self.0.fract() == 0.0 && self.0.is_finite() && self.0.abs() <= i64::MAX as f64
-    }
-
     pub fn yaml_display(self) -> String {
-        if self.is_integer() {
-            format!("{}", self.0 as i64)
-        } else {
-            format!("{}", self.0)
-        }
+        format!("{:.2}", self.0)
     }
 }
 
@@ -36,11 +33,7 @@ impl Eq for Score {}
 
 impl Serialize for Score {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        if self.is_integer() {
-            serializer.serialize_i64(self.0 as i64)
-        } else {
-            serializer.serialize_f64(self.0)
-        }
+        serializer.serialize_f64(self.0)
     }
 }
 
@@ -56,15 +49,15 @@ impl<'de> Deserialize<'de> for Score {
             }
 
             fn visit_i64<E: de::Error>(self, v: i64) -> Result<Score, E> {
-                Ok(Score(v as f64))
+                Ok(Score::new(v as f64))
             }
 
             fn visit_u64<E: de::Error>(self, v: u64) -> Result<Score, E> {
-                Ok(Score(v as f64))
+                Ok(Score::new(v as f64))
             }
 
             fn visit_f64<E: de::Error>(self, v: f64) -> Result<Score, E> {
-                Ok(Score(v))
+                Ok(Score::new(v))
             }
         }
 
@@ -195,9 +188,14 @@ mod tests {
     }
 
     #[test]
-    fn integer_score_serializes_without_decimal() {
-        let json = serde_json::to_string(&Score::one()).unwrap();
-        assert_eq!(json, "1");
+    fn score_rounds_to_two_decimals_and_yaml_always_shows_them() {
+        assert_eq!(Score::new(1.0).yaml_display(), "1.00");
+        assert_eq!(Score::new(0.0).yaml_display(), "0.00");
+        assert_eq!(Score::new(0.601).yaml_display(), "0.60");
+        assert_eq!(Score::new(0.805).yaml_display(), "0.81");
+        assert_eq!(Score::new(0.8).get(), 0.80);
+        let json = serde_json::to_value(Score::one()).unwrap();
+        assert_eq!(json, 1.0);
     }
 
     #[test]
@@ -210,7 +208,7 @@ mod tests {
         let json = serde_json::to_value(&freshness).unwrap();
         assert_eq!(json["last-verified"], "2026-09-01 13:05:00");
         assert_eq!(json["impl-path"], "gamesvr/DurabilityManager.java");
-        assert_eq!(json["score"], 1);
+        assert_eq!(json["score"], 1.0);
         let back: Freshness = serde_json::from_value(json).unwrap();
         assert_eq!(back, freshness);
     }

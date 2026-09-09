@@ -1,6 +1,6 @@
 mod impl_current;
 
-use crate::model::Atom;
+use crate::model::{Atom, Timestamp};
 
 use super::combine::{Factor, FactorKind};
 use super::ImplSnapshot;
@@ -8,11 +8,11 @@ use super::ImplSnapshot;
 /// Sole place weighted `id → weight` is assigned. Sum must be ≤ 1.
 const WEIGHTS: &[(&str, f64)] = &[(impl_current::ID, 0.40)];
 
-pub fn factors(atom: &Atom, snapshots: &[ImplSnapshot]) -> Vec<Factor> {
+pub fn factors(atom: &Atom, snapshots: &[ImplSnapshot], now: Timestamp) -> Vec<Factor> {
     vec![Factor {
         id: impl_current::ID,
         kind: FactorKind::Weighted,
-        value: impl_current::value(atom, snapshots),
+        value: impl_current::value(atom, snapshots, now),
         weight: Some(weight(impl_current::ID)),
     }]
 }

@@ -28,7 +28,7 @@
 |------|------------|
 | 重复 | atomize：入库前 `query --all`，LLM 判是否同一事实；同则复用或 `edit` |
 | 查找 | compose：按问题 `query`（默认 active），LLM 整理成文 |
-| 新鲜度 | 每次召回时打分并终审；compose 成文只用落盘 `score == 1` |
+| 新鲜度 | 每次召回时打分并终审；分数闭环见 [`freshness.md`](freshness.md) |
 
 ---
 
@@ -82,7 +82,7 @@ agent 把结构化 JSON 交给命令。`opencanon/atoms/` 与 `opencanon/docs/` 
 - `different`：按新原子走
 - `unsure`：问人
 
-`freshness.score == 0` 的 hit 不当现行真源去合并。无命中则本批视为新事实。
+`freshness.score == 0.00` 的 hit 不当现行真源去合并。无命中则本批视为新事实。
 
 这一刀挡住的是「本批候选 vs 本次召回看到的原子」。`add` 只保证 slug/id 不撞，不判断语义是否同一事实。
 
@@ -117,7 +117,7 @@ agent 把结构化 JSON 交给命令。`opencanon/atoms/` 与 `opencanon/docs/` 
 
 `SLUG_CONFLICT` 时整批未写：同事实则复用占用方；不同事实则改 slug 再查再试。占用方若需释放文件名，用 `delete` 后重试 `add`。
 
-`active` 写入 `last-verified` 与 `score = 1`，保留已有 `impl-path`。
+`active` 写入 `last-verified` 与 `score = 1.00`，保留已有 `impl-path`。
 
 ### 3.6 源文档段末链接
 
@@ -137,7 +137,7 @@ agent 把结构化 JSON 交给命令。`opencanon/atoms/` 与 `opencanon/docs/` 
 
 零命中可再扩一轮同义词；仍零则告诉用户库中没有相关真源，不编文。
 
-丢掉不回答该问的命中，以及 `score == 0`。成文只用落盘 `score == 1`。
+丢掉不回答该问的命中，以及 `score == 0.00`。成文只用落盘 `score > 0.80`。分数闭环见 [`freshness.md`](freshness.md)。
 
 ### 4.2 成文与落盘
 
@@ -162,18 +162,18 @@ LLM 只依据这些原子的 `body`：可调语序、写摘要，不得引入原
 1. 读 `opencanon/config.yaml` 的 `locales`；英语 ∪ locales ∪ 种子里的别名，组成 `keywords`。
 2. `opencanon query`（atomize 加 `--all`，compose 不加）。命中是完整原子，留在会话。
 3. 对命中里的 active：`opencanon freshness <id...>`。CLI 对照 `impl-path` 给粗分并写回 `score`，**只降不升**。无已有分则写入合成值。无 `impl-path` 则 `skipped`，不算分、不写盘。
-4. 按信封把分铺回会话命中，再按**落盘分**终审：
+4. 按信封把分铺回会话命中，再按**落盘分**终审（细则见 [`freshness.md`](freshness.md)）：
 
 | 落盘分 | 含义 | 之后 |
 |--------|------|------|
-| `1` | 可用 | 不问 LLM |
-| `0` | 不可用 | 不当现行真源，不再问 |
-| `0.60` | 尚未终审 | LLM 对照 `impl-path`；判断不了则问人 |
+| `> 0.80` | 本轮可用 | 不问 LLM |
+| `0.00` | 不可用 | 不当现行真源，不再问 |
+| `(0.00, 0.80]` | 尚未终审 | LLM 对照 `impl-path`；判断不了则问人 |
 | `skipped` | 无对照路径 | 问人 |
 
-真实：`edit` 写入 `last-verified` 与 `score = 1`。不真实：`edit` `score = 0`。升分不靠再跑 `freshness`。终审不改 `body`。
+真实：`edit` 写入 `last-verified` 与 `score = 1.00`。不真实：`edit` `score = 0.00`。升分不靠再跑 `freshness`。终审不改 `body`。
 
-`0.60` 不得带入后续判同或取材。compose 成文只用 `1`。
+`(0.00, 0.80]` 不得带入后续判同或取材。compose 成文用 `score > 0.80`。
 
 因素与合成见 [`crates/canon-core/src/compute/freshness/AGENTS.md`](../crates/canon-core/src/compute/freshness/AGENTS.md)。
 
@@ -216,7 +216,7 @@ LLM 只依据这些原子的 `body`：可调语序、写摘要，不得引入原
 
 - **入库是防重的发生地。** 新内容对照已有主张（含未转正）判是否同一事实；已有则复用或补细节，没有才新建。
 - **提问是查找的发生地。** 不做全局索引；按问题扫描原子，再由 LLM 成文。
-- **召回是新鲜度的发生地。** 对照当前实现打粗分并终审；过时的原子 `score = 0`，不当现行真源，正文仍留在文件里等人决定怎么改。
+- **召回是新鲜度的发生地。** 对照当前实现打粗分并终审；过时的原子 `score = 0.00`，不当现行真源，正文仍留在文件里等人决定怎么改。分数闭环见 [`freshness.md`](freshness.md)。
 - **同一主题再迁一篇源** 会再次走 atomize 的判同与 `edit`，把新细节并进已有真源，并在新源上加链接。
 
 没有第三条「扫一遍库」的常规步骤。步骤只写在 `opencanon-atomize` 与 `opencanon-compose` 两条 skill 里。

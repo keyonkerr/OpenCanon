@@ -238,9 +238,9 @@ freshness:
         let freshness = md.split("freshness:\n").nth(1).unwrap();
         let lv = freshness.find("  last-verified:").unwrap();
         let ip = freshness.find("  impl-path:").unwrap();
-        let sc = freshness.find("  score: 1\n").unwrap();
+        let sc = freshness.find("  score: 1.00\n").unwrap();
         assert!(lv < ip && ip < sc);
-        assert!(!md.contains("score: 1.0"));
+        assert!(md.contains("score: 1.00"));
     }
 
     #[test]

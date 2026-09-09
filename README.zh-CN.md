@@ -57,7 +57,7 @@ agent 跑 `opencanon-atomize`：按原文抽出单事实主张，对照库里已
 
 agent 跑 `opencanon-compose`：按问题召回 `active` 原子，整理成文，不编造原子里没有的事实。只要会话里看就展示；要落盘或要放到别处时，写入 `opencanon/docs/`，别处只放链接、不复制正文。
 
-闭环步骤见 [`docs/loop.md`](docs/loop.md)。
+闭环步骤见 [`docs/loop.md`](docs/loop.md)。新鲜度分数见 [`docs/freshness.md`](docs/freshness.md)。
 
 ## 它解决什么
 

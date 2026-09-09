@@ -66,11 +66,7 @@ pub fn combine(factors: &[Factor]) -> Score {
             score *= f.value;
         }
     }
-    Score::new(round2(score.clamp(0.0, 1.0)))
-}
-
-fn round2(value: f64) -> f64 {
-    (value * 100.0).round() / 100.0
+    Score::new(score)
 }
 
 #[cfg(test)]

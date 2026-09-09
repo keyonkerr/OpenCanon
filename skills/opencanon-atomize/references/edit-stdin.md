@@ -14,6 +14,6 @@ stdin 必须是 JSON **数组**。元素必填 `id`；出现的可变字段覆�
 ]
 ```
 
-不要传与当前不同的 `status`。`freshness` 按子键合并：只传 `impl-path` 时保留已有的 `last-verified` / `score`。召回终审可只传 `last-verified` 与 `score`（真实为 1，不真实为 0）。可选 `tags`（整键替换）。
+不要传与当前不同的 `status`。`freshness` 按子键合并：只传 `impl-path` 时保留已有的 `last-verified` / `score`。召回终审可只传 `last-verified` 与 `score`（真实为 1.00，不真实为 0.00）。可选 `tags`（整键替换）。
 
 调用：`opencanon edit`（PowerShell 管道与 `add` 相同）。`VALIDATION_FAILED` 时按 `error.details.index` 改那条，重试全数组。

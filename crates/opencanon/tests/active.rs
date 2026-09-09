@@ -20,13 +20,13 @@ fn active_promotes_draft_and_stamps_freshness() {
         atom["freshness"]["impl-path"],
         "gamesvr/DurabilityManager.java"
     );
-    assert_eq!(atom["freshness"]["score"], 1);
+    assert_eq!(atom["freshness"]["score"], 1.0);
 
     let md =
         std::fs::read_to_string(atoms_dir(dir.path()).join(format!("{SAMPLE_ID}.md"))).unwrap();
     assert!(md.contains("status: active"));
     assert!(md.contains("last-verified: 2026-09-01 13:05:00"));
-    assert!(md.contains("score: 1\n"));
+    assert!(md.contains("score: 1.00\n"));
     assert!(md.contains("impl-path: gamesvr/DurabilityManager.java"));
     assert!(md.contains("正文：只描述一个事实。"));
 

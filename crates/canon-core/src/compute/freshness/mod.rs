@@ -24,12 +24,12 @@ pub fn has_impl_path(atom: &Atom) -> bool {
 }
 
 /// `None` when the atom has no `impl-path` (skip). Otherwise score all registered factors.
-pub fn evaluate(atom: &Atom, snapshots: &[ImplSnapshot]) -> Option<Evaluation> {
+pub fn evaluate(atom: &Atom, snapshots: &[ImplSnapshot], now: Timestamp) -> Option<Evaluation> {
     if !has_impl_path(atom) {
         return None;
     }
     let mut factors = gate::factors(snapshots);
-    factors.extend(weighted::factors(atom, snapshots));
+    factors.extend(weighted::factors(atom, snapshots, now));
     let score = combine::combine(&factors);
     Some(Evaluation { score, factors })
 }
@@ -61,24 +61,28 @@ mod tests {
         }
     }
 
+    fn now() -> Timestamp {
+        Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0)
+    }
+
     #[test]
     fn skip_without_impl_path() {
         let a = atom("正文", &[], Some("2026-09-01 13:05:00"));
-        assert!(evaluate(&a, &[snap(true, None)]).is_none());
+        assert!(evaluate(&a, &[snap(true, None)], now()).is_none());
         let blank = atom("正文", &["  "], Some("2026-09-01 13:05:00"));
-        assert!(evaluate(&blank, &[snap(true, None)]).is_none());
+        assert!(evaluate(&blank, &[snap(true, None)], now()).is_none());
     }
 
     #[test]
     fn path_ok_and_not_newer_than_verified_is_one() {
-        let verified = Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0);
+        let verified = now();
         let a = atom(
             "纯中文。",
             &["gamesvr/DurabilityManager.java"],
             Some("2026-09-01 13:05:00"),
         );
-        let out = evaluate(&a, &[snap(true, Some(verified))]).unwrap();
-        assert_eq!(out.score.get(), 1.0);
+        let out = evaluate(&a, &[snap(true, Some(verified))], now()).unwrap();
+        assert_eq!(out.score.get(), 1.00);
     }
 
     #[test]
@@ -89,14 +93,14 @@ mod tests {
             Some("2026-09-01 13:05:00"),
         );
         let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
-        let out = evaluate(&a, &[snap(true, Some(later))]).unwrap();
+        let out = evaluate(&a, &[snap(true, Some(later))], now()).unwrap();
         assert_eq!(out.score.get(), 0.60);
     }
 
     #[test]
     fn never_verified() {
         let a = atom("纯中文。", &["gamesvr/DurabilityManager.java"], None);
-        let out = evaluate(&a, &[snap(true, None)]).unwrap();
+        let out = evaluate(&a, &[snap(true, None)], now()).unwrap();
         assert_eq!(out.score.get(), 0.60);
     }
 
@@ -107,23 +111,75 @@ mod tests {
             &["gamesvr/DurabilityManager.java"],
             Some("2026-09-01 13:05:00"),
         );
-        let out = evaluate(&a, &[snap(false, None)]).unwrap();
-        assert_eq!(out.score.get(), 0.0);
+        let out = evaluate(&a, &[snap(false, None)], now()).unwrap();
+        assert_eq!(out.score.get(), 0.00);
     }
 
     #[test]
     fn any_missing_file_is_zero() {
         let a = atom("纯中文。", &["a.rs", "b.rs"], Some("2026-09-01 13:05:00"));
-        let out = evaluate(&a, &[snap(true, None), snap(false, None)]).unwrap();
-        assert_eq!(out.score.get(), 0.0);
+        let out = evaluate(&a, &[snap(true, None), snap(false, None)], now()).unwrap();
+        assert_eq!(out.score.get(), 0.00);
     }
 
     #[test]
     fn any_file_newer_than_verified_is_floor() {
         let a = atom("纯中文。", &["a.rs", "b.rs"], Some("2026-09-01 13:05:00"));
-        let verified = Timestamp::from_ymd_hms(2026, 9, 1, 13, 5, 0);
+        let verified = now();
         let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
-        let out = evaluate(&a, &[snap(true, Some(verified)), snap(true, Some(later))]).unwrap();
+        let out = evaluate(
+            &a,
+            &[snap(true, Some(verified)), snap(true, Some(later))],
+            now(),
+        )
+        .unwrap();
+        assert_eq!(out.score.get(), 0.60);
+    }
+
+    #[test]
+    fn recency_ninety_days_is_review_line() {
+        let verified = now();
+        let a = atom(
+            "纯中文。",
+            &["gamesvr/DurabilityManager.java"],
+            Some("2026-09-01 13:05:00"),
+        );
+        let out = evaluate(
+            &a,
+            &[snap(true, Some(verified))],
+            verified.saturating_add_days(90),
+        )
+        .unwrap();
+        assert_eq!(out.score.get(), 0.80);
+    }
+
+    #[test]
+    fn recency_one_hundred_eighty_days_is_floor() {
+        let verified = now();
+        let a = atom(
+            "纯中文。",
+            &["gamesvr/DurabilityManager.java"],
+            Some("2026-09-01 13:05:00"),
+        );
+        let out = evaluate(
+            &a,
+            &[snap(true, Some(verified))],
+            verified.saturating_add_days(180),
+        )
+        .unwrap();
+        assert_eq!(out.score.get(), 0.60);
+    }
+
+    #[test]
+    fn impl_newer_is_floor_even_when_now_equals_verified() {
+        let verified = now();
+        let a = atom(
+            "纯中文。",
+            &["gamesvr/DurabilityManager.java"],
+            Some("2026-09-01 13:05:00"),
+        );
+        let later = Timestamp::from_ymd_hms(2026, 9, 2, 0, 0, 0);
+        let out = evaluate(&a, &[snap(true, Some(later))], verified).unwrap();
         assert_eq!(out.score.get(), 0.60);
     }
 }

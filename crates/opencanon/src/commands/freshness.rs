@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 
 use crate::error::CliError;
 
-pub fn run(store: &Store, ids: &[String]) -> Result<Value, CliError> {
+pub fn run(store: &Store, now: Timestamp, ids: &[String]) -> Result<Value, CliError> {
     let atoms = load_atoms(store, ids)?;
     let mut rows = Vec::with_capacity(atoms.len());
     let mut updated = 0usize;
@@ -27,7 +27,7 @@ pub fn run(store: &Store, ids: &[String]) -> Result<Value, CliError> {
         }
         let paths = atom.freshness.impl_path.as_slice();
         let snapshots: Vec<_> = paths.iter().map(|path| probe(store.root(), path)).collect();
-        let evaluation = freshness::evaluate(&atom, &snapshots).expect("impl-path present");
+        let evaluation = freshness::evaluate(&atom, &snapshots, now).expect("impl-path present");
         let next = ops::apply_score(atom.clone(), evaluation.score);
         let persisted = next.freshness.score.expect("apply_score always sets score");
         if !ops::score_unchanged(&atom, &next) {

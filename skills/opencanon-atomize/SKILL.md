@@ -85,9 +85,9 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 按 [references/query.md](references/query.md) 抽词、调用、给命中里的 active 打分并做真实性终审。
 
-比对的是**正文是否同一件事**：该候选的 `body`（本篇刚拆出的主张）对 `query` 命中的已有原子 `body`。只用这两边的 `body`，不以 CLI 粗分（0.60）为准。slug 与某 hit 的 `id` 相同仍要判同，禁止「同 slug 就自动合并」。
+比对的是**正文是否同一件事**：该候选的 `body`（本篇刚拆出的主张）对 `query` 命中的已有原子 `body`。只用这两边的 `body`，不以 CLI 粗分为准。slug 与某 hit 的 `id` 相同仍要判同，禁止「同 slug 就自动合并」。
 
-`freshness.score == 0` 的 hit 不得作为 `same <id>` 的合并目标（不当现行真源）。正文像同一件事则标 `unsure` 问人，或 `different` 后新建。
+`freshness.score == 0.00` 的 hit 不得作为 `same <id>` 的合并目标（不当现行真源）。正文像同一件事则标 `unsure` 问人，或 `different` 后新建。
 
 无命中或目录为空：每条候选标 `different`。
 
@@ -105,7 +105,7 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 ## 4. 读 impl-path 自动判定
 
-按 [references/judge.md](references/judge.md) 打开本批 `impl-path` 里每一个实现文件，按 body 分块核对应文件，不要求单文件覆盖整篇。本步不写盘。query.md 已对「仍符合」且未改 body 的 hit 盖过 `last-verified` 与 `score = 1` 的，本步对该 hit 标不动，不必再读同一批文件。
+按 [references/judge.md](references/judge.md) 打开本批 `impl-path` 里每一个实现文件，按 body 分块核对应文件，不要求单文件覆盖整篇。本步不写盘。query.md 已对「仍符合」且未改 body 的 hit 盖过 `last-verified` 与 `score = 1.00` 的，本步对该 hit 标不动，不必再读同一批文件。
 
 完成：每个带路径的候选是 `true`、`false` 或 `ask`；每个须核的 `same` / 待选 `same` 命中是不动、`auto_edit` 或 `ask_edit`。
 

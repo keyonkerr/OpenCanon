@@ -183,7 +183,10 @@ fn dispatch(command: Commands) -> Result<Value, CliError> {
             status,
             all,
         } => commands::query(&store, &keywords, list_filter(status, all)),
-        Commands::Freshness { ids } => commands::freshness(&store, &ids),
+        Commands::Freshness { ids } => {
+            let now = now::resolve_now()?;
+            commands::freshness(&store, now, &ids)
+        }
         Commands::Compose => commands::compose(&store),
         Commands::Help => unreachable!("help is handled before dispatch"),
     }

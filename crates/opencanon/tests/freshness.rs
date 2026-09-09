@@ -63,7 +63,7 @@ fn omit_ids_is_all_active_in_list_order() {
     assert!(data["atoms"][0].get("factors").is_none());
     assert_eq!(data["atoms"][1]["id"], SAMPLE_ID);
     assert_eq!(data["atoms"][1]["skipped"], false);
-    assert_eq!(data["atoms"][1]["score"], 0.6);
+    assert_eq!(data["atoms"][1]["score"], 0.60);
     assert_eq!(factor(&data["atoms"][1], "impl-exists")["kind"], "gate");
     assert_eq!(factor(&data["atoms"][1], "impl-exists")["value"], 1);
     assert_eq!(
@@ -72,7 +72,7 @@ fn omit_ids_is_all_active_in_list_order() {
     );
     assert_eq!(factor(&data["atoms"][1], "impl-current")["value"], 0);
     assert_eq!(factor(&data["atoms"][1], "impl-current")["weight"], 0.4);
-    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.6));
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.60));
     assert_eq!(disk_score(dir.path(), SKIP_ID), Some(1.0));
 }
 
@@ -82,7 +82,7 @@ fn future_verified_does_not_raise_floor() {
     add_and_active(dir.path());
     write_impl(dir.path(), "class DurabilityManager {}");
     let first = assert_ok(&run(dir.path(), &["freshness", SAMPLE_ID]), "freshness");
-    assert_eq!(first["atoms"][0]["score"], 0.6);
+    assert_eq!(first["atoms"][0]["score"], 0.60);
 
     let edited = run_stdin(
         dir.path(),
@@ -97,9 +97,9 @@ fn future_verified_does_not_raise_floor() {
     let data = assert_ok(&output, "freshness");
     assert_eq!(data["count"], 1);
     assert_eq!(data["updated-count"], 0);
-    assert_eq!(data["atoms"][0]["score"], 0.6);
+    assert_eq!(data["atoms"][0]["score"], 0.60);
     assert_eq!(factor(&data["atoms"][0], "impl-current")["value"], 1);
-    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.6));
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.60));
 }
 
 #[test]
@@ -118,7 +118,7 @@ fn zero_is_not_raised_to_floor() {
     let output = run(dir.path(), &["freshness", SAMPLE_ID]);
     let data = assert_ok(&output, "freshness");
     assert_eq!(data["updated-count"], 0);
-    assert_eq!(data["atoms"][0]["score"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0.0);
     assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 1);
     assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.0));
 }
@@ -130,7 +130,7 @@ fn missing_impl_file_is_zero() {
     let output = run(dir.path(), &["freshness", SAMPLE_ID]);
     let data = assert_ok(&output, "freshness");
     assert_eq!(data["atoms"][0]["skipped"], false);
-    assert_eq!(data["atoms"][0]["score"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0.0);
     assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 0);
     assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.0));
 }
@@ -144,7 +144,7 @@ fn second_run_does_not_rewrite() {
     assert_eq!(first["updated-count"], 1);
     let second = assert_ok(&run(dir.path(), &["freshness", SAMPLE_ID]), "freshness");
     assert_eq!(second["updated-count"], 0);
-    assert_eq!(second["atoms"][0]["score"], 0.6);
+    assert_eq!(second["atoms"][0]["score"], 0.60);
 }
 
 #[test]
@@ -218,18 +218,41 @@ fn unknown_flag_is_usage_error() {
 }
 
 #[test]
-fn does_not_read_opencanon_now() {
+fn recency_ninety_days_writes_review_line() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
     write_impl(dir.path(), "class DurabilityManager {}");
+    let edited = run_stdin(
+        dir.path(),
+        &["edit"],
+        &format!(
+            r#"[{{"id":"{SAMPLE_ID}","freshness":{{"last-verified":"2099-01-01 00:00:00","score":1}}}}]"#
+        ),
+    );
+    assert_ok(&edited, "edit");
+
     let output = cmd(dir.path())
-        .env("OPENCANON_NOW", "2099-01-01 00:00:00")
+        .env("OPENCANON_NOW", "2099-04-01 00:00:00")
         .args(["freshness", SAMPLE_ID])
         .output()
         .unwrap();
     let data = assert_ok(&output, "freshness");
-    assert_eq!(data["atoms"][0]["score"], 0.6);
-    assert_eq!(factor(&data["atoms"][0], "impl-current")["value"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0.80);
+    assert_eq!(factor(&data["atoms"][0], "impl-current")["value"], 0.5);
+    assert_eq!(disk_score(dir.path(), SAMPLE_ID), Some(0.80));
+}
+
+#[test]
+fn freshness_invalid_clock_env_is_io_error() {
+    let dir = tempdir().unwrap();
+    add_and_active(dir.path());
+    write_impl(dir.path(), "class DurabilityManager {}");
+    let output = cmd(dir.path())
+        .env("OPENCANON_NOW", "bogus")
+        .args(["freshness", SAMPLE_ID])
+        .output()
+        .unwrap();
+    assert_err(&output, "freshness", "IO_ERROR");
 }
 
 #[test]
@@ -269,6 +292,6 @@ fn multiple_impl_paths_one_missing_is_zero() {
 
     let output = run(dir.path(), &["freshness", SAMPLE_ID]);
     let data = assert_ok(&output, "freshness");
-    assert_eq!(data["atoms"][0]["score"], 0);
+    assert_eq!(data["atoms"][0]["score"], 0.0);
     assert_eq!(factor(&data["atoms"][0], "impl-exists")["value"], 0);
 }

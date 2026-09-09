@@ -36,8 +36,8 @@ pub fn query(store: &Store, keywords: &[String], filter: ListFilter) -> Result<V
     query::run(store, keywords, filter)
 }
 
-pub fn freshness(store: &Store, ids: &[String]) -> Result<Value, CliError> {
-    freshness::run(store, ids)
+pub fn freshness(store: &Store, now: Timestamp, ids: &[String]) -> Result<Value, CliError> {
+    freshness::run(store, now, ids)
 }
 
 pub fn compose(store: &Store) -> Result<Value, CliError> {

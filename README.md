@@ -57,7 +57,7 @@ Once atoms exist, ask the agent, for example:
 
 The agent runs `opencanon-compose`: it recalls `active` atoms for the question and writes prose without inventing facts that are not in those atoms. If you only need it in the session, it shows the body. If you want it on disk or elsewhere, it writes `opencanon/docs/` and places a link at the other path — it does not copy the body.
 
-The closed loop is in [`docs/loop.md`](docs/loop.md) (Chinese).
+The closed loop is in [`docs/loop.md`](docs/loop.md) (Chinese). Freshness scores: [`docs/freshness.md`](docs/freshness.md) (Chinese).
 
 ## What it solves
 

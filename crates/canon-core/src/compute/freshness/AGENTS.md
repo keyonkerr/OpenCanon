@@ -4,7 +4,7 @@
 
 无 `impl-path`（缺省、空白、或列表空）由调用方 skip，不算分、不写盘。那是语料过滤，不是因素。`impl-path` 可多条。
 
-本 crate 零 IO：exists / `changed_at` 由 CLI 注入。
+本 crate 零 IO：exists / `changed_at` / `now` 由 CLI 注入。
 
 ## 角色
 
@@ -15,7 +15,7 @@
 | Multiplier | 加权之后再 `score *= value`。有第一种实例再建 `multiplier/`。 |
 | Observe | 进信封，不入总分。有第一种实例再建 `observe/`。 |
 
-合成顺序：门槛 → 加权 → 乘数 → 四舍五入到两位并夹到 `[0, 1]`。
+合成顺序：门槛 → 加权 → 乘数 → `Score::new`（夹到 `[0, 1]` 并四舍五入到两位）。
 
 写回磁盘不在本目录：`ops::apply_score` 只降不升。不要在 `combine` 里做 min。
 

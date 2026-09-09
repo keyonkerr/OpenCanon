@@ -2,7 +2,7 @@ use crate::lifecycle;
 use crate::model::{Atom, Score, Status, Timestamp};
 use crate::Error;
 
-/// Draft → Active, stamping `last-verified` and `score = 1`. Keeps `impl-path`.
+/// Draft → Active, stamping `last-verified` and `score = 1.00`. Keeps `impl-path`.
 pub fn activate(mut atom: Atom, now: Timestamp) -> Result<Atom, Error> {
     if !lifecycle::can_transition(atom.status, Status::Active) {
         return Err(Error::InvalidTransition {
