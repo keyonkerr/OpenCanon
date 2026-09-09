@@ -84,6 +84,51 @@ file_sha256() {
   fi
 }
 
+pick_profile() {
+  os=$(uname -s)
+  shell_name=$(basename "${SHELL:-}")
+  case "$os" in
+    Darwin)
+      case "$shell_name" in
+        bash) printf '%s\n' "$HOME/.bash_profile" ;;
+        *) printf '%s\n' "$HOME/.zprofile" ;;
+      esac
+      ;;
+    *)
+      case "$shell_name" in
+        zsh) printf '%s\n' "$HOME/.zshrc" ;;
+        bash) printf '%s\n' "$HOME/.bashrc" ;;
+        *) printf '%s\n' "$HOME/.profile" ;;
+      esac
+      ;;
+  esac
+}
+
+add_to_path() {
+  case ":$PATH:" in
+    *":$BIN_DIR:"*)
+      step "$BIN_DIR is already on PATH"
+      return
+      ;;
+  esac
+
+  PATH="$BIN_DIR:$PATH"
+  export PATH
+
+  profile=$(pick_profile)
+  begin_marker="# >>> OpenCanon installer >>>"
+  end_marker="# <<< OpenCanon installer <<<"
+  path_line="export PATH=\"$BIN_DIR:\$PATH\""
+
+  if [ -f "$profile" ] && grep -F "$begin_marker" "$profile" >/dev/null 2>&1; then
+    step "PATH already configured in $profile"
+    return
+  fi
+
+  printf '\n%s\n%s\n%s\n' "$begin_marker" "$path_line" "$end_marker" >> "$profile"
+  step "added $BIN_DIR to PATH in $profile (open a new terminal)"
+}
+
 RELEASE=$(normalize_release "$RELEASE")
 TARGET=$(detect_target)
 ARCHIVE="${BIN}-${TARGET}.tar.gz"
@@ -123,13 +168,6 @@ chmod 755 "$BIN_DIR/$BIN"
 
 step "installed $BIN_DIR/$BIN"
 
-case ":$PATH:" in
-  *":$BIN_DIR:"*)
-    step "$BIN_DIR is already on PATH"
-    ;;
-  *)
-    printf 'WARNING: %s is not on PATH. Add this to your shell profile:\n  export PATH="%s:$PATH"\n' "$BIN_DIR" "$BIN_DIR" >&2
-    ;;
-esac
+add_to_path
 
 step "run: opencanon help"

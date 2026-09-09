@@ -10,6 +10,7 @@ $Bin = 'opencanon'
 $DefaultBinDir = Join-Path $env:LOCALAPPDATA 'OpenCanon\bin'
 $BinDir = if ($env:OPENCANON_INSTALL_DIR) { $env:OPENCANON_INSTALL_DIR } else { $DefaultBinDir }
 $Release = if ($env:OPENCANON_RELEASE) { $env:OPENCANON_RELEASE } else { 'latest' }
+$InheritedPath = $env:Path
 
 function Write-Step([string]$Message) {
     Write-Host "==> $Message"
@@ -38,6 +39,89 @@ function Get-AssetUrl([string]$Asset) {
         return "https://github.com/$Repo/releases/latest/download/$Asset"
     }
     return "https://github.com/$Repo/releases/download/$Release/$Asset"
+}
+
+function Test-PathContains([string]$PathValue, [string]$Entry) {
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return $false
+    }
+    $needle = $Entry.TrimEnd('\')
+    foreach ($segment in $PathValue.Split(';', [System.StringSplitOptions]::RemoveEmptyEntries)) {
+        if ($segment.TrimEnd('\') -ieq $needle) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Prepend-PathEntry([string]$PathValue, [string]$Entry) {
+    $needle = $Entry.TrimEnd('\')
+    $segments = @($Entry)
+    if (-not [string]::IsNullOrWhiteSpace($PathValue)) {
+        $segments += $PathValue.Split(';', [System.StringSplitOptions]::RemoveEmptyEntries) |
+            Where-Object { $_.TrimEnd('\') -ine $needle }
+    }
+    return ($segments -join ';')
+}
+
+function Notify-EnvironmentChange {
+    try {
+        if (-not ('OpenCanon.NativeMethods' -as [type])) {
+            Add-Type -Namespace OpenCanon -Name NativeMethods -MemberDefinition @"
+[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+public static extern IntPtr SendMessageTimeout(
+    IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
+    uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
+"@
+        }
+        $result = [UIntPtr]::Zero
+        [void][OpenCanon.NativeMethods]::SendMessageTimeout(
+            [IntPtr]0xffff,
+            0x1A,
+            [UIntPtr]::Zero,
+            'Environment',
+            2,
+            5000,
+            [ref]$result
+        )
+    } catch {
+        # User PATH is already written; explorer will pick it up on the next login if notify fails.
+    }
+}
+
+function Refresh-SessionPath {
+    $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+    $user = [Environment]::GetEnvironmentVariable('Path', 'User')
+    if ([string]::IsNullOrWhiteSpace($machine)) {
+        $env:Path = $user
+    } elseif ([string]::IsNullOrWhiteSpace($user)) {
+        $env:Path = $machine
+    } else {
+        $env:Path = "$machine;$user"
+    }
+}
+
+function Install-VisibleShim([string]$ExePath) {
+    $exeDir = [System.IO.Path]::GetDirectoryName($ExePath)
+    $candidates = @(
+        (Join-Path $env:USERPROFILE '.local\bin'),
+        (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps')
+    )
+    foreach ($dir in $candidates) {
+        if (-not (Test-PathContains -PathValue $InheritedPath -Entry $dir)) {
+            continue
+        }
+        if ($dir.TrimEnd('\') -ieq $exeDir.TrimEnd('\')) {
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $dir)) {
+            continue
+        }
+        $shim = Join-Path $dir "$Bin.exe"
+        Copy-Item -LiteralPath $ExePath -Destination $shim -Force
+        Write-Step "also installed $shim (already on this terminal PATH)"
+        return
+    }
 }
 
 $Release = Normalize-Release $Release
@@ -79,23 +163,33 @@ try {
     }
 
     New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
-    Copy-Item -Path $Exe -Destination (Join-Path $BinDir "$Bin.exe") -Force
+    $Installed = Join-Path $BinDir "$Bin.exe"
+    Copy-Item -Path $Exe -Destination $Installed -Force
 
-    Write-Step "installed $(Join-Path $BinDir "$Bin.exe")"
+    Write-Step "installed $Installed"
 
     $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-    if (-not $UserPath) { $UserPath = '' }
-    $Parts = $UserPath -split ';' | Where-Object { $_ -ne '' }
-    if ($Parts -notcontains $BinDir) {
-        $NewPath = if ($UserPath.Trim() -eq '') { $BinDir } else { "$UserPath;$BinDir" }
-        [Environment]::SetEnvironmentVariable('Path', $NewPath, 'User')
-        Write-Step "added $BinDir to the user PATH (open a new terminal)"
+    $newUserPath = Prepend-PathEntry -PathValue $UserPath -Entry $BinDir
+    if ($newUserPath -cne $UserPath) {
+        [Environment]::SetEnvironmentVariable('Path', $newUserPath, 'User')
+        Notify-EnvironmentChange
+        Write-Step "PATH updated for future PowerShell sessions."
+    } elseif (Test-PathContains -PathValue $InheritedPath -Entry $BinDir) {
+        Write-Step "$BinDir is already on PATH."
     } else {
-        Write-Step "$BinDir is already on PATH"
+        Write-Step "PATH is already configured for future PowerShell sessions."
     }
-    $env:Path = "$BinDir;$env:Path"
 
-    Write-Step 'run: opencanon help'
+    Refresh-SessionPath
+    if (-not (Test-PathContains -PathValue $env:Path -Entry $BinDir)) {
+        $env:Path = Prepend-PathEntry -PathValue $env:Path -Entry $BinDir
+    }
+
+    Install-VisibleShim -ExePath $Installed
+
+    Write-Step "Current PowerShell session: $Bin"
+    Write-Step "Future PowerShell windows: open a new PowerShell window and run: $Bin"
+    Write-Step "run: opencanon help"
 } finally {
     Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 }
