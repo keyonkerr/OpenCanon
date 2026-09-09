@@ -70,11 +70,11 @@ agent 把结构化 JSON 交给命令。`opencanon/atoms/` 与 `opencanon/docs/` 
 
 按原文抽出领域主张，跨节合并、通写成自包含 `body`。机制 / 规则 / 命令类查找实现，写入 `freshness.impl-path`（相对项目根，可多条）。无代码或配表可对的才省略路径。
 
-完成时：源里每一处主张归恰好一条候选；每条有合法 `slug`（即将来的 `id`）、`title`、`body`、主 tag。
+完成时：源里每一处主张归恰好一条候选；每条有合法 `slug`（即将来的 `id`）、`title`、`body`、`tags`（英语查询面补集，可为 `[]`）。
 
 ### 3.2 先查后写
 
-种子是本批候选的 `title` / `body`、源里的别名、本批 `slug`。抽词后 `query --all`（含 draft，避免与未审占用漏判）。对命中里的 active 走 §5 的打分与终审。
+种子是本批候选的 `title` / `body`、源里的别名、本批 `slug` 与 `tags`。抽词后 `query --all`（含 draft，避免与未审占用漏判）。对命中里的 active 走 §5 的打分与终审。
 
 然后 LLM 用两边的 **body** 判是否同一事实（不以 CLI 粗分为准）：
 

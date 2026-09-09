@@ -22,7 +22,7 @@
 - `list` 与 `query` 共用 `ListFilter`：默认 / `Active` = 只真源；`Status(x)` = 只该状态；`All` = 三种都在。`query` 不再自写语料过滤。
 - `query` 命中：keyword 对 `id` / `title` / `tags` / `body` 做大小写折叠子串。任一场命中即入选。
 - 只有 `status == active` 是真源。draft / deprecated 与真源同目录，靠 `ops` 过滤，不靠分子目录。
-- Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`freshness.impl-path` 指向活实现（一条或多条路径），不把源文档或代码拷进原子。
+- Atom 无 `source`、无独立 `keywords`（并入 `tags`）、无 manifest。`tags` 可空；英语与是否和 title/body 重叠由 atomize skill 定，core 不校验。`freshness.impl-path` 指向活实现（一条或多条路径），不把源文档或代码拷进原子。
 - `Deprecated` 回真源：删除占用该 slug 的文件后重新 `add` 走审。不提供回流。
 - 查重召回：对已有 active 原子的 body 两两字面宽召回，一个对外函数。不把切块或指纹做成第二个公开函数。算法未定前不建空模块。
 - `ops::apply_score`（`freshness` 写回）：只改 `freshness.score`。无已有分则写入合成值；否则 `min(已有, 合成)`，只降不升。升到 1.00 或终审为 0.00 走 `edit`，不经本函数抬高。

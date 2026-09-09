@@ -27,10 +27,10 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 - `title`：一句话点出该事实
 - `slug`：从 `title` 精炼成小写英文蛇形，作为原子 id。规则见 [references/add-stdin.md](references/add-stdin.md) 的 `slug` 节。本步读该节、写进候选并自检合法；不要留到组 stdin 再编。
 - `body`：这一处主张的自包含正文
-- `tags`：一条一个主 tag，对应该主张被查时的问题类型（如 `查重`、`SSOT`）。本步可暂定，步骤 2 通写后按问题类型定稿。
+- `tags`：英语查询面补集，本步可暂定（可为 `[]`）。步骤 2 通写后按补集规则定稿。
 - 类型：机制 / 规则 / 命令，或问题 / 市场 / 调研。`impl-path` 在步骤 2 合稿后查找，本步不搜仓库。
 
-完成：源里每一处主张片段至少被一条候选覆盖；每条都有 `title`、`slug`、`body`、`tags`，且 `slug` 已按 add-stdin 自检合法。
+完成：源里每一处主张片段至少被一条候选覆盖；每条都有 `title`、`slug`、`body`、`tags`（`tags` 可为 `[]`），且 `slug` 已按 add-stdin 自检合法。
 
 ## 2. 跨节合稿
 
@@ -60,7 +60,7 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 
 通写后做**删句**：任一句子删去后，本条必须少一个独立约束或因果环节；否则该句是复述，删掉。同一理由只写一次。痛点句只作为本条机制的因为所以，通写落到「故…」后的约束。同一编号痛点的不同症状可以分给不同机制，每条只带支撑自己结论的那一截。
 
-主 tag 取读者会用来提问的中心词（如 `查重`、`拼接`、`迁移`、`SSOT`），一条一个。该词（或源里已有的同义说法）必须出现在 `title` 或 `body` 中，语言随 `opencanon/config.yaml` 的 `locales`（英语中心词始终可出现在 slug / 英文别名里）。
+列出读者会用来问本条的词：英语始终有；再加 `opencanon/config.yaml` 的 `locales`；再加源里已有别名。英语问词作为大小写折叠子串出现在 `id`（本步即 slug）、`title`、`body` 或 `tags` 之一。locale 问词写进 `title` / `body`（抽词时也可改写成对应英文再查）。`tags` 只放尚未出现在 `id` / `title` / `body` 里的英语问词：小写 ASCII，一条一个 token（字母、可含 `-`），至多 3 个，每个能当一个 `query` argv；英语问面已被这三场盖全则 `tags` 为 `[]`。
 
 然后按类型找实现：机制 / 规则 / 命令类在被治理项目里查找代码或配表。对照见 [references/split.md](references/split.md) 的「body 按实现文件分块」。
 
@@ -76,12 +76,12 @@ compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask
 2. 未决项已在它所修饰的机制里；同一陈述只出现在一条。职责清单条只含原则与互斥边界；各机制的动词、约束、未决在机制条。
 3. 每条 `body` 通过删句（仍能指出覆盖的源位置）；痛点已落到「故」后的约束；`title` 与之一致；`slug` 合法且本批互不相同。收束句没有两条同写。调研快照含可核对时点。
 4. 机制 / 规则 / 命令类：已查找实现。有落点则 `impl-path` 列出全部分块路径，body 按文件成段；无落点才省略。未因单文件盖不全而省略 path，也未因此拆成多条原子。问题 / 市场 / 调研类无 `impl-path`。
-5. 每条一个主 tag，取该主张被查时的中心词；该词或源里同义说法已出现在 `title` 或 `body`。
+5. 每条英语问词已出现在 `id` / `title` / `body` / `tags` 之一；每条 tag 是小写英语 token，且不是 `id` / `title` / `body` 的子串；`tags` 条数 ≤ 3（可为 `[]`）。
 6. 已套过 split.md 的合稿例与通写例（含清单与机制、删句、调研时点、收束句、迁移手续并入、痛点落到故、body 按文件分块）。
 
 ## 3. 召回并判是否同一事实
 
-除 `query.md` 里 freshness 写回与真实性终审的 `edit`（只动 `last-verified` / `score`）外，不改 body/状态。种子是本批候选的 `title` / `body`、源里已出现的别名、本批每条 `slug`。把 slug 并进 keywords，以便占名召回：id 等于 slug 的已有原子一定出现在命中里。过滤：`query --all`（含 draft 与 deprecated，避免与未审或已下线的同名文件漏判）。
+除 `query.md` 里 freshness 写回与真实性终审的 `edit`（只动 `last-verified` / `score`）外，不改 body/状态。种子是本批候选的 `title` / `body`、源里已出现的别名、本批每条 `slug` 与 `tags`。把 slug 并进 keywords，以便占名召回：id 等于 slug 的已有原子一定出现在命中里。过滤：`query --all`（含 draft 与 deprecated，避免与未审或已下线的同名文件漏判）。
 
 按 [references/query.md](references/query.md) 抽词、调用、给命中里的 active 打分并做真实性终审。
 
@@ -173,7 +173,7 @@ stdin 用 UTF-8 文件重定向，例如 `cmd /c "opencanon add < add.json"`。�
 opencanon active <id>
 ```
 
-已确定同一事实：不 `add`。步骤 4 标了 `auto_edit`、或步骤 6 选了 `edit` 的：读 [references/edit-stdin.md](references/edit-stdin.md) 组 stdin，再：
+已确定同一事实：不 `add`。步骤 4 标了 `auto_edit`、或步骤 6 选了 `edit` 的：读 [references/edit-stdin.md](references/edit-stdin.md) 组 stdin。改了 `title` 或 `body` 的，按步骤 2 通写规则对成稿重算 `tags` 并整键传入。再：
 
 ```
 opencanon edit
