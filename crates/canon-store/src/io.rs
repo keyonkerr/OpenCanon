@@ -301,7 +301,7 @@ mod tests {
             id: "how_ssot_works".into(),
             title: "t".into(),
             atoms: vec!["ssot_one_place".into()],
-            body: "# t\n\nx [ssot_one_place](../atoms/ssot_one_place.md)".into(),
+            body: "# t\n\nx\n\n## 依据\n\n- [一处事实](../atoms/ssot_one_place.md)".into(),
         };
         store.write_doc(&doc).unwrap();
         assert!(crate::layout::docs_dir(dir.path()).is_dir());

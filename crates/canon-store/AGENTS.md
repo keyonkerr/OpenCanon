@@ -2,7 +2,7 @@
 
 `Atom` ↔ `opencanon/atoms/<id>.md` 与 `ComposedDoc` ↔ `opencanon/docs/<id>.md` 的唯一翻译层，也是磁盘上这些文件的唯一写入口。只认识这些值，不认识命令名或信封。
 
-status 该不该变、freshness 怎么合并、id 怎么分配、compose 引用是否合法，都在 `canon-core`。这里只读写已经算完的值。
+status 该不该变、freshness 怎么合并、id 怎么分配、compose 正文与依据表是否合法，都在 `canon-core`。这里只读写已经算完的值。
 
 ## 落点
 

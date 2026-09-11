@@ -4,9 +4,8 @@ use crate::model::{validate_slug, validate_title_body, ComposedDoc, Status};
 use crate::Error;
 
 const COMPOSE_INDEX: usize = 0;
-const CITE_OPEN: &str = "(../atoms/";
-const CITE_MARKER: &str = "](../atoms/";
-const CITE_CLOSE: &str = ".md)";
+const ATOM_LINK_MARKER: &str = "](../atoms/";
+const INDEX_HEADING: &str = "依据";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ComposeDraft {
@@ -16,16 +15,24 @@ pub struct ComposeDraft {
     pub body: String,
 }
 
-/// Validate a composed document and assign `id` from `slug`. Does not change atoms.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ComposeAtom {
+    pub status: Status,
+    pub title: String,
+}
+
+/// Validate a composed document, assign `id` from `slug`, and append a 依据
+/// index from atom titles. Does not change atoms.
 pub fn compose(
     draft: &ComposeDraft,
-    known: &HashMap<String, Status>,
+    known: &HashMap<String, ComposeAtom>,
 ) -> Result<ComposedDoc, Error> {
     validate_slug(&draft.slug)
         .map_err(|message| Error::validation(COMPOSE_INDEX, Some("slug".into()), message))?;
     validate_title_body(COMPOSE_INDEX, &draft.title, &draft.body)?;
 
     let atoms = unique_atom_ids(&draft.atoms)?;
+    let mut index_entries = Vec::with_capacity(atoms.len());
     for id in &atoms {
         match known.get(id) {
             None => {
@@ -35,35 +42,31 @@ pub fn compose(
                     format!("atom `{id}` not found"),
                 ));
             }
-            Some(status) if *status != Status::Active => {
+            Some(atom) if atom.status != Status::Active => {
                 return Err(Error::validation(
                     COMPOSE_INDEX,
                     Some("atoms".into()),
                     format!("atom `{id}` is not active"),
                 ));
             }
-            Some(_) => {}
+            Some(atom) if atom.title.is_empty() => {
+                return Err(Error::validation(
+                    COMPOSE_INDEX,
+                    Some("atoms".into()),
+                    format!("atom `{id}` title must be non-empty"),
+                ));
+            }
+            Some(atom) => index_entries.push((id.clone(), atom.title.clone())),
         }
     }
 
-    let cited = all_citations(&draft.body)?;
-    let paragraphs = content_paragraphs(&draft.body);
-    if paragraphs.is_empty() {
+    reject_atom_links(&draft.body)?;
+    reject_index_heading(&draft.body)?;
+    if content_paragraphs(&draft.body).is_empty() {
         return Err(Error::validation(
             COMPOSE_INDEX,
             Some("body".into()),
-            "body must have at least one cited paragraph",
-        ));
-    }
-    for para in &paragraphs {
-        trailing_citations(para)?;
-    }
-
-    if cited != atoms.iter().cloned().collect::<HashSet<_>>() {
-        return Err(Error::validation(
-            COMPOSE_INDEX,
-            Some("atoms".into()),
-            "atoms must equal the set of citations in body",
+            "body must have at least one paragraph",
         ));
     }
 
@@ -71,7 +74,7 @@ pub fn compose(
         id: draft.slug.clone(),
         title: draft.title.clone(),
         atoms,
-        body: draft.body.clone(),
+        body: append_index(&draft.body, &index_entries),
     })
 }
 
@@ -105,6 +108,59 @@ fn unique_atom_ids(ids: &[String]) -> Result<Vec<String>, Error> {
     Ok(out)
 }
 
+fn reject_atom_links(body: &str) -> Result<(), Error> {
+    if body.contains(ATOM_LINK_MARKER) {
+        return Err(Error::validation(
+            COMPOSE_INDEX,
+            Some("body".into()),
+            "body must not contain atom links",
+        ));
+    }
+    Ok(())
+}
+
+fn reject_index_heading(body: &str) -> Result<(), Error> {
+    for line in body.lines() {
+        if heading_text(line) == Some(INDEX_HEADING) {
+            return Err(Error::validation(
+                COMPOSE_INDEX,
+                Some("body".into()),
+                "body must not contain a 依据 heading",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn append_index(body: &str, entries: &[(String, String)]) -> String {
+    let mut out = body.trim_end().to_string();
+    out.push_str("\n\n## ");
+    out.push_str(INDEX_HEADING);
+    out.push_str("\n\n");
+    for (id, title) in entries {
+        out.push_str("- [");
+        out.push_str(&escape_link_text(title));
+        out.push_str("](../atoms/");
+        out.push_str(id);
+        out.push_str(".md)\n");
+    }
+    out
+}
+
+fn escape_link_text(title: &str) -> String {
+    let mut out = String::with_capacity(title.len());
+    for c in title.chars() {
+        match c {
+            '\\' | '[' | ']' => {
+                out.push('\\');
+                out.push(c);
+            }
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
 fn content_paragraphs(body: &str) -> Vec<String> {
     let body = body.replace("\r\n", "\n");
     let mut paras = Vec::new();
@@ -127,6 +183,14 @@ fn content_paragraphs(body: &str) -> Vec<String> {
     paras
 }
 
+fn heading_text(line: &str) -> Option<&str> {
+    let trimmed = line.trim();
+    if !is_heading(trimmed) {
+        return None;
+    }
+    Some(trimmed.trim_start_matches('#').trim())
+}
+
 fn is_heading(line: &str) -> bool {
     let mut hashes = 0usize;
     for c in line.chars() {
@@ -142,123 +206,26 @@ fn is_heading(line: &str) -> bool {
     matches!(line[hashes..].chars().next(), None | Some(' ') | Some('\t'))
 }
 
-fn trailing_citations(para: &str) -> Result<Vec<String>, Error> {
-    let mut rest = para.trim_end();
-    let mut ids = Vec::new();
-    loop {
-        match strip_one_citation_suffix(rest) {
-            Some((before, id)) => {
-                ids.push(id);
-                rest = before.trim_end();
-            }
-            None => break,
-        }
-    }
-    if ids.is_empty() {
-        return Err(Error::validation(
-            COMPOSE_INDEX,
-            Some("body".into()),
-            "each paragraph must end with at least one citation",
-        ));
-    }
-    if rest.is_empty() {
-        return Err(Error::validation(
-            COMPOSE_INDEX,
-            Some("body".into()),
-            "each paragraph must have text before citations",
-        ));
-    }
-    ids.reverse();
-    Ok(ids)
-}
-
-fn strip_one_citation_suffix(s: &str) -> Option<(&str, String)> {
-    let s = s.trim_end();
-    if !s.ends_with(CITE_CLOSE) {
-        return None;
-    }
-    let without_close = &s[..s.len() - CITE_CLOSE.len()];
-    let idx = without_close.rfind(CITE_MARKER)?;
-    let id = &without_close[idx + CITE_MARKER.len()..];
-    if !valid_cite_id(id) {
-        return None;
-    }
-    let before_brack = &without_close[..idx];
-    let bracket = before_brack.rfind('[')?;
-    let label = &before_brack[bracket + 1..];
-    if label != id || label.contains('\n') {
-        return None;
-    }
-    Some((&before_brack[..bracket], id.to_string()))
-}
-
-fn all_citations(body: &str) -> Result<HashSet<String>, Error> {
-    let mut ids = HashSet::new();
-    let mut from = 0;
-    while let Some(rel) = body[from..].find(CITE_OPEN) {
-        let abs = from + rel;
-        if abs == 0 || !body[..abs].ends_with(']') {
-            return Err(Error::validation(
-                COMPOSE_INDEX,
-                Some("body".into()),
-                "citation must be [id](../atoms/id.md)",
-            ));
-        }
-        let after = abs + CITE_OPEN.len();
-        let rest = &body[after..];
-        let Some(end) = rest.find(CITE_CLOSE) else {
-            return Err(Error::validation(
-                COMPOSE_INDEX,
-                Some("body".into()),
-                "citation must be [id](../atoms/id.md)",
-            ));
-        };
-        let id = &rest[..end];
-        if !valid_cite_id(id) {
-            return Err(Error::validation(
-                COMPOSE_INDEX,
-                Some("body".into()),
-                "citation must be [id](../atoms/id.md)",
-            ));
-        }
-        let before = &body[..abs - 1];
-        let Some(bracket) = before.rfind('[') else {
-            return Err(Error::validation(
-                COMPOSE_INDEX,
-                Some("body".into()),
-                "citation must be [id](../atoms/id.md)",
-            ));
-        };
-        let label = &before[bracket + 1..];
-        if label != id || label.contains('\n') {
-            return Err(Error::validation(
-                COMPOSE_INDEX,
-                Some("body".into()),
-                "citation link text must equal atom id",
-            ));
-        }
-        ids.insert(id.to_string());
-        from = after + end + CITE_CLOSE.len();
-    }
-    Ok(ids)
-}
-
-fn valid_cite_id(id: &str) -> bool {
-    !id.is_empty() && !id.contains('/') && !id.contains(')') && !id.contains('\n')
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
-    use super::{compose, ComposeDraft};
+    use super::{compose, ComposeAtom, ComposeDraft};
     use crate::model::Status;
     use crate::Error;
 
-    fn known(pairs: &[(&str, Status)]) -> HashMap<String, Status> {
+    fn known(pairs: &[(&str, Status, &str)]) -> HashMap<String, ComposeAtom> {
         pairs
             .iter()
-            .map(|(id, status)| ((*id).to_string(), *status))
+            .map(|(id, status, title)| {
+                (
+                    (*id).to_string(),
+                    ComposeAtom {
+                        status: *status,
+                        title: (*title).to_string(),
+                    },
+                )
+            })
             .collect()
     }
 
@@ -275,20 +242,32 @@ mod tests {
         "\
 # OpenCanon 如何保证一处事实只记一次
 
-摘要：一处事实只记一次。 [ssot_one_place](../atoms/ssot_one_place.md)
+摘要：一处事实只记一次。
 
-按问题组合原子成文。 [compose_by_topic](../atoms/compose_by_topic.md) [ssot_one_place](../atoms/ssot_one_place.md)
+按问题组合原子成文。
 "
     }
 
+    fn ok_known() -> HashMap<String, ComposeAtom> {
+        known(&[
+            (
+                "ssot_one_place",
+                Status::Active,
+                "一处事实只记录一次，其它文档只引用不复制",
+            ),
+            (
+                "compose_by_topic",
+                Status::Active,
+                "拼接：要派生可读文档时按问题召回原子并由 LLM 组合成文，派生文不是真源",
+            ),
+        ])
+    }
+
     #[test]
-    fn assigns_id_from_slug_and_keeps_atom_order() {
+    fn assigns_id_from_slug_keeps_atom_order_and_appends_index() {
         let doc = compose(
             &draft(&["ssot_one_place", "compose_by_topic"], ok_body()),
-            &known(&[
-                ("ssot_one_place", Status::Active),
-                ("compose_by_topic", Status::Active),
-            ]),
+            &ok_known(),
         )
         .unwrap();
         assert_eq!(doc.id, "how_ssot_works");
@@ -297,7 +276,34 @@ mod tests {
             vec!["ssot_one_place".to_string(), "compose_by_topic".to_string()]
         );
         assert_eq!(doc.title, "OpenCanon 如何保证一处事实只记一次");
-        assert_eq!(doc.body, ok_body());
+        assert_eq!(
+            doc.body,
+            "\
+# OpenCanon 如何保证一处事实只记一次
+
+摘要：一处事实只记一次。
+
+按问题组合原子成文。
+
+## 依据
+
+- [一处事实只记录一次，其它文档只引用不复制](../atoms/ssot_one_place.md)
+- [拼接：要派生可读文档时按问题召回原子并由 LLM 组合成文，派生文不是真源](../atoms/compose_by_topic.md)
+"
+        );
+    }
+
+    #[test]
+    fn escapes_brackets_in_index_titles() {
+        let body = "# t\n\nx\n";
+        let doc = compose(
+            &draft(&["ssot_one_place"], body),
+            &known(&[("ssot_one_place", Status::Active, "see [ssot] in title")]),
+        )
+        .unwrap();
+        assert!(doc
+            .body
+            .contains("- [see \\[ssot\\] in title](../atoms/ssot_one_place.md)\n"));
     }
 
     #[test]
@@ -305,13 +311,8 @@ mod tests {
         let mut input = draft(&["ssot_one_place"], ok_body());
         input.slug = "/bad".into();
         input.atoms = vec!["ssot_one_place".into()];
-        input.body = "\
-# t
-
-x [ssot_one_place](../atoms/ssot_one_place.md)
-"
-        .into();
-        let err = compose(&input, &known(&[("ssot_one_place", Status::Active)])).unwrap_err();
+        input.body = "# t\n\nx\n".into();
+        let err = compose(&input, &known(&[("ssot_one_place", Status::Active, "t")])).unwrap_err();
         match err {
             Error::Validation { index, field, .. } => {
                 assert_eq!(index, 0);
@@ -323,11 +324,7 @@ x [ssot_one_place](../atoms/ssot_one_place.md)
 
     #[test]
     fn empty_atoms_fails() {
-        let err = compose(
-            &draft(&[], ok_body()),
-            &known(&[("ssot_one_place", Status::Active)]),
-        )
-        .unwrap_err();
+        let err = compose(&draft(&[], ok_body()), &ok_known()).unwrap_err();
         assert_eq!(
             err,
             Error::validation(0, Some("atoms".into()), "atoms must be non-empty")
@@ -336,14 +333,9 @@ x [ssot_one_place](../atoms/ssot_one_place.md)
 
     #[test]
     fn duplicate_atoms_fail() {
-        let body = "\
-# t
-
-x [ssot_one_place](../atoms/ssot_one_place.md)
-";
         let err = compose(
-            &draft(&["ssot_one_place", "ssot_one_place"], body),
-            &known(&[("ssot_one_place", Status::Active)]),
+            &draft(&["ssot_one_place", "ssot_one_place"], "# t\n\nx\n"),
+            &known(&[("ssot_one_place", Status::Active, "t")]),
         )
         .unwrap_err();
         assert_eq!(
@@ -354,12 +346,7 @@ x [ssot_one_place](../atoms/ssot_one_place.md)
 
     #[test]
     fn missing_atom_fails() {
-        let body = "\
-# t
-
-x [missing_id](../atoms/missing_id.md)
-";
-        let err = compose(&draft(&["missing_id"], body), &HashMap::new()).unwrap_err();
+        let err = compose(&draft(&["missing_id"], "# t\n\nx\n"), &HashMap::new()).unwrap_err();
         assert_eq!(
             err,
             Error::validation(0, Some("atoms".into()), "atom `missing_id` not found")
@@ -368,14 +355,9 @@ x [missing_id](../atoms/missing_id.md)
 
     #[test]
     fn draft_atom_fails() {
-        let body = "\
-# t
-
-x [ssot_one_place](../atoms/ssot_one_place.md)
-";
         let err = compose(
-            &draft(&["ssot_one_place"], body),
-            &known(&[("ssot_one_place", Status::Draft)]),
+            &draft(&["ssot_one_place"], "# t\n\nx\n"),
+            &known(&[("ssot_one_place", Status::Draft, "t")]),
         )
         .unwrap_err();
         assert_eq!(
@@ -389,97 +371,43 @@ x [ssot_one_place](../atoms/ssot_one_place.md)
     }
 
     #[test]
-    fn paragraph_without_citation_fails() {
-        let body = "\
-# t
-
-摘要没有引用。
-
-正文。 [ssot_one_place](../atoms/ssot_one_place.md)
-";
-        let err = compose(
-            &draft(&["ssot_one_place"], body),
-            &known(&[("ssot_one_place", Status::Active)]),
-        )
-        .unwrap_err();
-        assert_eq!(
-            err,
-            Error::validation(
-                0,
-                Some("body".into()),
-                "each paragraph must end with at least one citation"
-            )
-        );
-    }
-
-    #[test]
-    fn citation_label_must_equal_id() {
-        let body = "\
-# t
-
-x [see](../atoms/ssot_one_place.md)
-";
-        let err = compose(
-            &draft(&["ssot_one_place"], body),
-            &known(&[("ssot_one_place", Status::Active)]),
-        )
-        .unwrap_err();
-        assert_eq!(
-            err,
-            Error::validation(
-                0,
-                Some("body".into()),
-                "citation link text must equal atom id"
-            )
-        );
-    }
-
-    #[test]
-    fn unused_atom_in_field_fails() {
+    fn atom_link_in_body_fails() {
         let body = "\
 # t
 
 x [ssot_one_place](../atoms/ssot_one_place.md)
 ";
         let err = compose(
-            &draft(&["ssot_one_place", "compose_by_topic"], body),
-            &known(&[
-                ("ssot_one_place", Status::Active),
-                ("compose_by_topic", Status::Active),
-            ]),
+            &draft(&["ssot_one_place"], body),
+            &known(&[("ssot_one_place", Status::Active, "t")]),
         )
         .unwrap_err();
         assert_eq!(
             err,
-            Error::validation(
-                0,
-                Some("atoms".into()),
-                "atoms must equal the set of citations in body"
-            )
+            Error::validation(0, Some("body".into()), "body must not contain atom links")
         );
     }
 
     #[test]
-    fn cited_id_not_in_atoms_field_fails() {
+    fn index_heading_in_body_fails() {
         let body = "\
 # t
 
-x [ssot_one_place](../atoms/ssot_one_place.md) [compose_by_topic](../atoms/compose_by_topic.md)
+x
+
+## 依据
 ";
         let err = compose(
             &draft(&["ssot_one_place"], body),
-            &known(&[
-                ("ssot_one_place", Status::Active),
-                ("compose_by_topic", Status::Active),
-            ]),
+            &known(&[("ssot_one_place", Status::Active, "t")]),
         )
         .unwrap_err();
         assert_eq!(
             err,
             Error::validation(
                 0,
-                Some("atoms".into()),
-                "atoms must equal the set of citations in body"
+                Some("body".into()),
+                "body must not contain a 依据 heading"
             )
         );
     }
@@ -488,7 +416,7 @@ x [ssot_one_place](../atoms/ssot_one_place.md) [compose_by_topic](../atoms/compo
     fn heading_only_body_fails() {
         let err = compose(
             &draft(&["ssot_one_place"], "# Title\n"),
-            &known(&[("ssot_one_place", Status::Active)]),
+            &known(&[("ssot_one_place", Status::Active, "t")]),
         )
         .unwrap_err();
         assert_eq!(
@@ -496,29 +424,7 @@ x [ssot_one_place](../atoms/ssot_one_place.md) [compose_by_topic](../atoms/compo
             Error::validation(
                 0,
                 Some("body".into()),
-                "body must have at least one cited paragraph"
-            )
-        );
-    }
-
-    #[test]
-    fn wrong_citation_path_fails() {
-        let body = "\
-# t
-
-x [ssot_one_place](opencanon/atoms/ssot_one_place.md)
-";
-        let err = compose(
-            &draft(&["ssot_one_place"], body),
-            &known(&[("ssot_one_place", Status::Active)]),
-        )
-        .unwrap_err();
-        assert_eq!(
-            err,
-            Error::validation(
-                0,
-                Some("body".into()),
-                "each paragraph must end with at least one citation"
+                "body must have at least one paragraph"
             )
         );
     }

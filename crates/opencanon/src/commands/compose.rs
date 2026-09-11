@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use canon_core::ops;
+use canon_core::ops::{self, ComposeAtom};
 use canon_store::Store;
 use serde_json::{json, Value};
 
@@ -15,7 +15,13 @@ pub fn run(store: &Store) -> Result<Value, CliError> {
         let atom = store
             .read(id)
             .map_err(|e| CliError::from_store(e, Some(index)))?;
-        known.insert(atom.id.clone(), atom.status);
+        known.insert(
+            atom.id.clone(),
+            ComposeAtom {
+                status: atom.status,
+                title: atom.title,
+            },
+        );
     }
     let doc = ops::compose(&draft, &known)?;
     store

@@ -6,8 +6,8 @@ use common::{
 };
 use tempfile::tempdir;
 
-fn compose_body(atom_id: &str) -> String {
-    format!("# {SAMPLE_TITLE}\n\n{SAMPLE_BODY} [{atom_id}](../atoms/{atom_id}.md)")
+fn compose_body() -> String {
+    format!("# {SAMPLE_TITLE}\n\n{SAMPLE_BODY}")
 }
 
 fn compose_json(slug: &str, title: &str, atom_id: &str, body: &str) -> String {
@@ -29,7 +29,7 @@ fn add_and_active(dir: &std::path::Path) {
 fn compose_writes_docs_not_atoms_and_returns_path() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
-    let body = compose_body(SAMPLE_ID);
+    let body = compose_body();
     let stdin = compose_json("how_ssot_works", SAMPLE_TITLE, SAMPLE_ID, &body);
     let output = run_stdin(dir.path(), &["compose"], &stdin);
     let data = assert_ok(&output, "compose");
@@ -44,7 +44,9 @@ fn compose_writes_docs_not_atoms_and_returns_path() {
     assert!(md.starts_with("---\nid: how_ssot_works\n"));
     assert!(md.contains("title:"));
     assert!(md.contains("atoms:\n  - durability_daily_restore\n"));
-    assert!(md.contains(&format!("[{SAMPLE_ID}](../atoms/{SAMPLE_ID}.md)")));
+    assert!(md.contains("## 依据"));
+    assert!(md.contains(&format!("[{SAMPLE_TITLE}](../atoms/{SAMPLE_ID}.md)")));
+    assert!(!md.contains(&format!("[{SAMPLE_ID}](../atoms/{SAMPLE_ID}.md)")));
     assert!(atoms_dir(dir.path())
         .join(format!("{SAMPLE_ID}.md"))
         .is_file());
@@ -54,7 +56,7 @@ fn compose_writes_docs_not_atoms_and_returns_path() {
 fn compose_overwrites_same_slug() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
-    let body = compose_body(SAMPLE_ID);
+    let body = compose_body();
     let first = compose_json("how_ssot_works", SAMPLE_TITLE, SAMPLE_ID, &body);
     assert_ok(&run_stdin(dir.path(), &["compose"], &first), "compose");
     let second = compose_json("how_ssot_works", "new title", SAMPLE_ID, &body);
@@ -68,7 +70,7 @@ fn compose_overwrites_same_slug() {
 #[test]
 fn compose_missing_atom_is_atom_not_found() {
     let dir = tempdir().unwrap();
-    let body = compose_body("missing_id");
+    let body = compose_body();
     let stdin = compose_json("how_ssot_works", SAMPLE_TITLE, "missing_id", &body);
     let output = run_stdin(dir.path(), &["compose"], &stdin);
     let err = assert_err(&output, "compose", "ATOM_NOT_FOUND");
@@ -81,7 +83,7 @@ fn compose_missing_atom_is_atom_not_found() {
 fn compose_draft_atom_is_validation_failed() {
     let dir = tempdir().unwrap();
     add_sample(dir.path());
-    let body = compose_body(SAMPLE_ID);
+    let body = compose_body();
     let stdin = compose_json("how_ssot_works", SAMPLE_TITLE, SAMPLE_ID, &body);
     let output = run_stdin(dir.path(), &["compose"], &stdin);
     let err = assert_err(&output, "compose", "VALIDATION_FAILED");
@@ -90,14 +92,30 @@ fn compose_draft_atom_is_validation_failed() {
 }
 
 #[test]
-fn compose_paragraph_without_citation_writes_nothing() {
+fn compose_atom_link_in_body_writes_nothing() {
     let dir = tempdir().unwrap();
     add_and_active(dir.path());
     let stdin = compose_json(
         "how_ssot_works",
         SAMPLE_TITLE,
         SAMPLE_ID,
-        "# t\n\nno citation here\n",
+        &format!("# t\n\nno [{SAMPLE_ID}](../atoms/{SAMPLE_ID}.md)\n"),
+    );
+    let output = run_stdin(dir.path(), &["compose"], &stdin);
+    let err = assert_err(&output, "compose", "VALIDATION_FAILED");
+    assert_eq!(err["details"]["field"], "body");
+    assert!(!docs_dir(dir.path()).exists());
+}
+
+#[test]
+fn compose_index_heading_in_body_writes_nothing() {
+    let dir = tempdir().unwrap();
+    add_and_active(dir.path());
+    let stdin = compose_json(
+        "how_ssot_works",
+        SAMPLE_TITLE,
+        SAMPLE_ID,
+        "# t\n\nprose\n\n## 依据\n",
     );
     let output = run_stdin(dir.path(), &["compose"], &stdin);
     let err = assert_err(&output, "compose", "VALIDATION_FAILED");

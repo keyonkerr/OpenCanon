@@ -26,6 +26,7 @@
 - `Deprecated` 回真源：删除占用该 slug 的文件后重新 `add` 走审。不提供回流。
 - 查重召回：对已有 active 原子的 body 两两字面宽召回，一个对外函数。不把切块或指纹做成第二个公开函数。算法未定前不建空模块。
 - `ops::apply_score`（`freshness` 写回）：只改 `freshness.score`。无已有分则写入合成值；否则 `min(已有, 合成)`，只降不升。升到 1.00 或终审为 0.00 走 `edit`，不经本函数抬高。
+- `ops::compose`：stdin `body` 是散文（不含 `](../atoms/` 链接、不含「依据」标题）。`atoms` 为用到的 id 集合（均须 active）。命令按该列表顺序在文末追加 `## 依据`，每条 `- [title](../atoms/<id>.md)`。依据表由本函数生成，不由调用方写入 `body`。
 
 ## 测试
 

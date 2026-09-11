@@ -56,7 +56,7 @@ mod tests {
             id: "how_ssot_works".into(),
             title: "OpenCanon 如何保证一处事实只记一次".into(),
             atoms: vec!["ssot_one_place".into(), "compose_by_topic".into()],
-            body: "# OpenCanon 如何保证一处事实只记一次\n\n摘要。 [ssot_one_place](../atoms/ssot_one_place.md)"
+            body: "# OpenCanon 如何保证一处事实只记一次\n\n摘要。\n\n## 依据\n\n- [一处事实只记录一次](../atoms/ssot_one_place.md)"
                 .into(),
         }
     }
@@ -76,7 +76,11 @@ atoms:
 ---
 # OpenCanon 如何保证一处事实只记一次
 
-摘要。 [ssot_one_place](../atoms/ssot_one_place.md)
+摘要。
+
+## 依据
+
+- [一处事实只记录一次](../atoms/ssot_one_place.md)
 "
         );
         assert_eq!(from_markdown(&spec_doc().id, &md).unwrap(), spec_doc());
