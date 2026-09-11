@@ -15,7 +15,7 @@ fn version_prints_cargo_version_without_envelope() {
     assert!(!dir.path().join("opencanon").exists());
     let text = stdout_str(&output);
     assert!(!text.starts_with('{'));
-    assert_eq!(env!("CARGO_PKG_VERSION"), "0.1.1");
+    assert_eq!(env!("CARGO_PKG_VERSION"), "0.1.2");
 }
 
 #[test]
