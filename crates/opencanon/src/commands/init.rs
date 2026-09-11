@@ -192,6 +192,7 @@ mod tests {
         let names = install_skills_from(dir.path(), &BUNDLED_SKILLS).unwrap();
         assert!(names.contains(&"opencanon-atomize".to_string()));
         assert!(names.contains(&"opencanon-compose".to_string()));
+        assert!(names.contains(&"opencanon-explore".to_string()));
         assert!(!names.contains(&"other-skill".to_string()));
         assert_eq!(
             std::fs::read_to_string(other.join("SKILL.md")).unwrap(),
@@ -208,6 +209,32 @@ mod tests {
             .join("references")
             .join("query.md")
             .exists());
+        assert!(skills.join("opencanon-explore").join("SKILL.md").exists());
+        assert!(skills
+            .join("opencanon-explore")
+            .join("references")
+            .join("recall.md")
+            .exists());
+        assert!(skills
+            .join("opencanon-explore")
+            .join("references")
+            .join("compare.md")
+            .exists());
+        let atomize_query = std::fs::read(
+            skills
+                .join("opencanon-atomize")
+                .join("references")
+                .join("query.md"),
+        )
+        .unwrap();
+        let compose_query = std::fs::read(
+            skills
+                .join("opencanon-compose")
+                .join("references")
+                .join("query.md"),
+        )
+        .unwrap();
+        assert_eq!(atomize_query, compose_query);
         assert!(!stale.join("stale.md").exists());
     }
 

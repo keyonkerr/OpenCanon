@@ -18,17 +18,20 @@
                     │              ▲
                     │              │ 同则 edit / 复用，不新建
                     │              │
-人 ──提问────────► compose ──► 会话成文；按需写入 opencanon/docs/
-                                   （派生，不是真源）
+人 ──要派生文档──► compose ──► 会话成文；按需写入 opencanon/docs/
+                    │              （派生，不是真源）
+                    │
+人 ──问现状/对照──► explore ──► 会话作答（只读；query --all）
 ```
 
-两条 skill 共用同一套召回内核：抽词 → `query` → 对命中里的 active 调 `freshness` → 按落盘分终审。新鲜度没有独立 skill、没有独立触发阶段。
+atomize 与 compose 共用打分召回内核：抽词 → `query` → 对命中里的 active 调 `freshness` → 按落盘分终审。explore 只 `query --all`，不打分、不写盘。新鲜度没有独立 skill、没有独立触发阶段。（[真源：新鲜度须对照代码打分，0.60 再由 LLM 终审且不另开 skill](../opencanon/atoms/freshness_vs_code.md) · [真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
 
 | 痛点 | 合在哪一刀 |
 |------|------------|
 | 重复 | atomize：入库前 `query --all`，LLM 判是否同一事实；同则复用或 `edit` |
-| 查找 | compose：按问题 `query`（默认 active），LLM 整理成文 |
-| 新鲜度 | 每次召回时打分并终审；分数闭环见 [`freshness.md`](freshness.md) |
+| 查找（成文） | compose：按问题 `query`（默认 active），LLM 整理成文 |
+| 查找（对照） | explore：先召回再对照是否仍是现状；非 active / 低分标明后由人采信 |
+| 新鲜度 | atomize / compose 召回时打分并终审；分数闭环见 [`freshness.md`](freshness.md) |
 
 ---
 
@@ -46,7 +49,7 @@ agent 把结构化 JSON 交给命令。原子的增删改查只经 `opencanon`�
 
 ## 2. 一次引导：`init`
 
-每个被治理项目做一次，发生在两条 skill 之前。
+每个被治理项目做一次，发生在产品 skill 之前。
 
 人在 TTY 上多选文档语言。命令无参数。成功则：
 
@@ -54,7 +57,7 @@ agent 把结构化 JSON 交给命令。原子的增删改查只经 `opencanon`�
 - `locales` 为勾选的 BCP-47（勾了英语则含 `en`）
 - 把产品 skill 按同名覆盖安装到 cwd 的 `.agents/skills/`，其它 skill 保留
 
-之后 atomize / compose 都读这份 `locales` 扩词。英语在抽词里默认不能少，与 yaml 里是否勾了 `en` 独立。
+之后 atomize / compose / explore 都读这份 `locales` 扩词。英语在抽词里默认不能少，与 yaml 里是否勾了 `en` 独立。
 
 无 TTY 则退出码 2，不写信封。
 
@@ -74,7 +77,7 @@ agent 把结构化 JSON 交给命令。原子的增删改查只经 `opencanon`�
 
 ### 3.2 先查后写
 
-种子是本批候选的 `title` / `body`、源里的别名、本批 `slug` 与 `tags`。抽词后 `query --all`（含 draft，避免与未审占用漏判）。对命中里的 active 走 §5 的打分与终审。
+种子是本批候选的 `title` / `body`、源里的别名、本批 `slug` 与 `tags`。抽词后 `query --all`（含 draft，避免与未审占用漏判）。对命中里的 active 走 §6 的打分与终审。
 
 然后 LLM 用两边的 **body** 判是否同一事实（不以 CLI 粗分为准）：
 
@@ -129,11 +132,11 @@ agent 把结构化 JSON 交给命令。原子的增删改查只经 `opencanon`�
 
 ## 4. 读出：组合
 
-触发：人要用库中真源回答一个问题，或要一篇可读文档。编排：[`skills/opencanon-compose/SKILL.md`](../skills/opencanon-compose/SKILL.md)。无需人审（不改真源）。
+触发：人要一篇可读文档，或要把该文写入 `opencanon/docs/`。编排：[`skills/opencanon-compose/SKILL.md`](../skills/opencanon-compose/SKILL.md)。无需人审（不改真源）。问库里有什么、还成不成立、结合代码看项目现状，走 §5，不走本节。（[真源：拼接：要派生可读文档时按问题召回原子并由 LLM 组合成文，派生文不是真源](../opencanon/atoms/compose_from_atoms.md)）
 
 ### 4.1 召回与取材
 
-种子是用户问题全文（问题里出现的原子 id 并进 keywords）。`query` 默认只扫 active。对命中走 §5。
+种子是用户问题全文（问题里出现的原子 id 并进 keywords）。`query` 默认只扫 active。对命中走 §6。
 
 零命中可再扩一轮同义词；仍零则告诉用户库中没有相关真源，不编文。
 
@@ -149,13 +152,33 @@ LLM 只依据这些原子的 `body`：可调语序、写摘要，不得引入原
 | 要落盘，或要把该文放到别处 | `compose` 校验引用并写入 `opencanon/docs/<id>.md` |
 | 写到 `opencanon/docs/` 以外 | 先 `compose`，再在目标文件放链接，不复制正文 |
 
-派生文档无 `status`，不是真源，不写回原子正文。
+派生文档无 `status`，不是真源，不写回原子正文。（[真源：拼接：要派生可读文档时按问题召回原子并由 LLM 组合成文，派生文不是真源](../opencanon/atoms/compose_from_atoms.md)）
 
 ---
 
-## 5. 召回内核（两条 skill 共用）
+## 5. 读出：探索
 
-规格：各 skill 目录下同文的 `references/query.md`。改这一段时两份一起改。种子与是否 `--all` 写在各自 `SKILL.md`。
+触发：人要查库里现有内容、对照代码看主张还成不成立，或结合实现问项目现状。不论问记录还是问对照，都是先召回再对照是否仍是现状。编排：[`skills/opencanon-explore/SKILL.md`](../skills/opencanon-explore/SKILL.md)。零写盘；不调 `freshness` / `edit` / `compose`。要派生文档走 §4。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+
+### 5.1 召回
+
+种子是用户问题全文（问题里出现的原子 id 并进 keywords）。一律 `query --all`（draft / active / deprecated）。不按 `status`、不按落盘 `score` 过滤。零命中可再扩一轮同义词；仍零则带着空列表对照代码，不停止。不得跳过召回直接搜代码。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+
+专题问题走 `query --all`；库存清单才 `list --all`。不手列 `opencanon/atoms/`。
+
+### 5.2 对照与作答
+
+相关集合由问题决定：专题题只对照回答该问的命中；清单题相关集合可以是全库。对留下的命中打开 `impl-path`，按 body 分块核文件，标一致 / 不一致 / 无法对照（含低分与非 active）。落盘 `score` 只当上次记录。扩圈读到的邻文件是观察，不改三分。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+
+会话里先写三层依据（库里记了什么；是否仍是现状；缺口），再写结论直接回答原问；发给用户时结论置顶。现行结论只用 `active` 且 `score > 0.80` 且对照一致的主张；不一致写成已不符。每条用到的原子带上 `id`、`status`、落盘 `score`。`status` 不是 `active`，或无分 / `score <= 0.80`，必须点名并写明未当作现行真源、是否采信由人决定。不因这些标记丢掉该条，不阻塞提问表单。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+
+观察只进「是否仍是现状」，不写成真源，也不写入 `opencanon/docs/`。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+
+---
+
+## 6. 召回内核（atomize 与 compose 共用）
+
+规格：atomize / compose 各目录下同文的 `references/query.md`。改这一段时两份一起改。种子与是否 `--all` 写在各自 `SKILL.md`。explore 的抽词与调用 `query` 在 `references/recall.md`，与上述三节同文，不含打分与终审。（[真源：新鲜度须对照代码打分，0.60 再由 LLM 终审且不另开 skill](../opencanon/atoms/freshness_vs_code.md)）
 
 不另开新鲜度 skill。打分只传本次命中里 active 的 id；省略 id 会打全库。
 
@@ -179,44 +202,44 @@ LLM 只依据这些原子的 `body`：可调语序、写摘要，不得引入原
 
 ---
 
-## 6. 真源树在闭环里长什么样
+## 7. 真源树在闭环里长什么样
 
 全部托管数据在被治理项目 cwd 的 `opencanon/` 下。`opencanon` 打开的 root 永远是进程 cwd。
 
 ```
 <root>/
-├── .agents/skills/             # init 安装的 opencanon-atomize / opencanon-compose
+├── .agents/skills/             # init 安装的 opencanon-atomize / opencanon-compose / opencanon-explore
 └── opencanon/
     ├── config.yaml             # locales
     ├── atoms/<id>.md           # 真源候选与真源（文件名 = id）
     └── docs/<id>.md            # 第一次 compose 才出现
 ```
 
-闭环用到的状态是 **draft → active**（`add` 强制 draft；证据足再 `active`）。审不通过则不创建，或对已落盘的 draft `delete`。消费默认只读 active。
+闭环用到的状态是 **draft → active**（`add` 强制 draft；证据足再 `active`）。审不通过则不创建，或对已落盘的 draft `delete`。compose 默认只读 active；explore 显式 `--all`，非 active 只标明不丢弃。
 
 ---
 
-## 7. 闭环用到的命令
+## 8. 闭环用到的命令
 
 按触发顺序列。载荷与信封形状不在本文抄写。
 
 | 阶段 | 命令 |
 |------|------|
 | 引导 | `init` |
-| 召回 | `query`、`freshness`、必要时 `get` |
+| 召回 | `query`、`freshness`、必要时 `get`（explore 只 `query --all`，不调 `freshness`） |
 | 写入原子 | `add`、`edit`、`active`；释放文件名时 `delete` |
 | 派生文档 | `compose` |
-| 查看 | `list`、`get`（skill 主路径不依赖 `list`） |
+| 查看 | `list`、`get`（compose / atomize 主路径不依赖 `list`；explore 清单题才 `list --all`） |
 
 `help` / `--version` 是进程身份，不进闭环。
 
 ---
 
-## 8. 圈在何处合上
+## 9. 圈在何处合上
 
 - **入库是防重的发生地。** 新内容对照已有主张（含未转正）判是否同一事实；已有则复用或补细节，没有才新建。
-- **提问是查找的发生地。** 不做全局索引；按问题扫描原子，再由 LLM 成文。
-- **召回是新鲜度的发生地。** 对照当前实现打粗分并终审；过时的原子 `score = 0.00`，不当现行真源，正文仍留在文件里等人决定怎么改。分数闭环见 [`freshness.md`](freshness.md)。
+- **提问是查找的发生地。** 不做全局索引；要派生文档则 compose 成文；问记录或问对照则 explore 作答（先召回再对照是否仍是现状，结论回答原问；`query --all`，非 active / 低分标明后由人采信）。（[真源：拼接：要派生可读文档时按问题召回原子并由 LLM 组合成文，派生文不是真源](../opencanon/atoms/compose_from_atoms.md) · [真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）
+- **召回是新鲜度的发生地。** atomize / compose 对照当前实现打粗分并终审；过时的原子 `score = 0.00`，不当现行真源，正文仍留在文件里等人决定怎么改。explore 不打分。分数闭环见 [`freshness.md`](freshness.md)。（[真源：新鲜度须对照代码打分，0.60 再由 LLM 终审且不另开 skill](../opencanon/atoms/freshness_vs_code.md)）
 - **同一主题再迁一篇源** 会再次走 atomize 的判同与 `edit`，把新细节并进已有真源，并在新源上加链接。
 
-没有第三条「扫一遍库」的常规步骤。步骤只写在 `opencanon-atomize` 与 `opencanon-compose` 两条 skill 里。
+没有「扫一遍库」的常规步骤。第三条 skill 是按问题只读探索，不是全库索引。步骤写在 `opencanon-atomize`、`opencanon-compose` 与 `opencanon-explore` 三条 skill 里。（[真源：探索：先召回再对照是否仍是现状且不写盘](../opencanon/atoms/explore_read_only.md)）

@@ -12,7 +12,7 @@
 
 它不是文章写得好不好，也不能只看日历。新鲜度必须对照当前实现（`impl-path` 指向的代码或配表）。机器不读正文；是否仍符合实现，由 LLM（判断不了则问人）在召回时终审。
 
-没有独立的新鲜度 skill。打分发生在 atomize / compose 共用的 query 内核里：`query` 命中之后，对其中的 active 调 `opencanon freshness`。
+没有独立的新鲜度 skill。打分发生在 atomize / compose 共用的 query 内核里：`query` 命中之后，对其中的 active 调 `opencanon freshness`。explore 不调 `freshness`，只读已有落盘分。（[真源：新鲜度须对照代码打分，0.60 再由 LLM 终审且不另开 skill](../opencanon/atoms/freshness_vs_code.md)）
 
 落盘分一律四舍五入到两位小数（例如 `1.00`、`0.80`、`0.60`、`0.00`）。
 

@@ -35,9 +35,9 @@ cd /path/to/your-project
 opencanon init
 ```
 
-Pick document languages in the terminal. That creates `opencanon/` (including `atoms/` and `config.yaml`) and installs `opencanon-atomize` and `opencanon-compose` into `.agents/skills/`. A TTY is required; it fails without one.
+Pick document languages in the terminal. That creates `opencanon/` (including `atoms/` and `config.yaml`) and installs `opencanon-atomize`, `opencanon-compose`, and `opencanon-explore` into `.agents/skills/`. A TTY is required; it fails without one.
 
-If your agent **does not** load `.agents/skills/` (for example it only uses Cursor / Claude Code / Codex skill directories), copy those two folders into whichever skills path it does load — whole directories, keep the names. They are in the project's `.agents/skills/`, or in this repo's [`skills/`](skills/).
+If your agent **does not** load `.agents/skills/` (for example it only uses Cursor / Claude Code / Codex skill directories), copy those three folders into whichever skills path it does load — whole directories, keep the names. They are in the project's `.agents/skills/`, or in this repo's [`skills/`](skills/).
 
 ### 2. Write: split a document into atoms
 
@@ -48,11 +48,20 @@ In that project, point the agent at a source document, for example:
 
 The agent runs `opencanon-atomize`: it extracts single-fact claims, compares them to atoms already in the store (reuse or `edit` if it is the same fact), promotes when it can check against the implementation, and asks you only when it cannot. Claims in the source stay untouched; a true-source link to `opencanon/atoms/<id>.md` is appended at the end of each migrated paragraph. Only atoms with `status: active` are the true source.
 
-### 3. Read: compose an answer from atoms
+### 3. Read: explore atoms against the code
 
-Once atoms exist, ask the agent, for example:
+Once atoms exist, ask the agent about current recorded claims or whether they still match the implementation, for example:
 
-- “Answer from the atom store: …”
+- “What's in the atom store about …?”
+- “Does this still match the code?”
+- “What's the project status given the atoms and the repo?”
+
+The agent runs `opencanon-explore`: it recalls atoms with `query --all` (all statuses), compares them to `impl-path` files, and answers the question in the session (conclusion first, then evidence). It does not write files. Draft, deprecated, or low-score hits are labeled so you can decide whether to trust them.
+
+### 4. Read: compose a derived document
+
+When you want a readable document assembled from true-source atoms, ask for example:
+
 - “Compose a readable document: …”
 
 The agent runs `opencanon-compose`: it recalls `active` atoms for the question and writes prose without inventing facts that are not in those atoms. If you only need it in the session, it shows the body. If you want it on disk or elsewhere, it writes `opencanon/docs/` and places a link at the other path — it does not copy the body.

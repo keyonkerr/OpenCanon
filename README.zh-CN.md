@@ -35,9 +35,9 @@ cd /path/to/your-project
 opencanon init
 ```
 
-终端里多选文档语言。成功后会建 `opencanon/`（含 `atoms/` 与 `config.yaml`），并把 `opencanon-atomize`、`opencanon-compose` 装进 `.agents/skills/`。需要交互终端；无 TTY 会失败。
+终端里多选文档语言。成功后会建 `opencanon/`（含 `atoms/` 与 `config.yaml`），并把 `opencanon-atomize`、`opencanon-compose`、`opencanon-explore` 装进 `.agents/skills/`。需要交互终端；无 TTY 会失败。
 
-如果你的 agent **不读** `.agents/skills/`（例如只用 Cursor / Claude Code / Codex 自己的 skill 目录），把这两个文件夹复制到它会加载的 skills 路径即可，整目录拷、保持目录名。源在项目里的 `.agents/skills/`，或本仓的 [`skills/`](skills/)。
+如果你的 agent **不读** `.agents/skills/`（例如只用 Cursor / Claude Code / Codex 自己的 skill 目录），把这三个文件夹复制到它会加载的 skills 路径即可，整目录拷、保持目录名。源在项目里的 `.agents/skills/`，或本仓的 [`skills/`](skills/)。
 
 ### 2. 写入：把文档拆进原子库
 
@@ -48,11 +48,20 @@ opencanon init
 
 agent 跑 `opencanon-atomize`：按原文抽出单事实主张，对照库里已有原子（同一事实则复用或补细节），能对照代码则转正，对不上才问你。迁完后源文档主张正文不动，段末追加指向 `opencanon/atoms/<id>.md` 的真源链接。只有 `status: active` 的原子才是真源。
 
-### 3. 读出：按问题组合成文
+### 3. 读出：对照代码探索原子
 
-有原子之后，对 agent 提问，例如：
+有原子之后，问库里记了什么、主张和实现还是否一致，例如：
 
-- 「根据原子库回答：……」
+- 「原子库里关于……现在有什么？」
+- 「对照代码看这话还成不成立」
+- 「结合原子和仓库，项目现在什么状态？」
+
+agent 跑 `opencanon-explore`：`query --all` 召回全状态原子，对照 `impl-path`，在会话里先给结论再列依据，不写任何文件。draft、deprecated 或低分命中会标明，由你决定是否采信。
+
+### 4. 读出：组合成一篇派生文档
+
+要一篇由真源原子拼成的可读文档时，例如：
+
 - 「合成一篇可读文档：……」
 
 agent 跑 `opencanon-compose`：按问题召回 `active` 原子，整理成文，不编造原子里没有的事实。只要会话里看就展示；要落盘或要放到别处时，写入 `opencanon/docs/`，别处只放链接、不复制正文。

@@ -14,7 +14,9 @@ agent 的执行规格，编排的唯一位置。改流程只改本目录；改�
 
 产品 skill 的 `name` 用 `opencanon-` 前缀，后面跟能力的英文（如 `opencanon-atomize`）。
 
-凡用 `query` 召回的产品 skill，各目录下 `references/query.md` **须同文**（抽词、调用 `query`、对命中里的 active 调 `freshness`、按落盘分做真实性终审）。改这一段时两份一起改。不要用 `../` 链到另一条 skill，也不要 `skills/shared/`。种子、是否 `--all`、命中之后（判同 / 取材）写在各自 `SKILL.md` 本步。打分只传 active 的 id，禁止省略 id（省略会打全库）。`freshness` 写回只降不升；升到 1.00 或终审为 0.00 走 `edit`。不另开新鲜度 skill。
+打分召回（atomize、compose）：各目录下 `references/query.md` **须同文**（抽词、调用 `query`、对命中里的 active 调 `freshness`、按落盘分做真实性终审）。改打分/终审时两份一起改。不要用 `../` 链到另一条 skill，也不要 `skills/shared/`。种子、是否 `--all`、命中之后（判同 / 取材）写在各自 `SKILL.md` 本步。打分只传 active 的 id，禁止省略 id（省略会打全库）。`freshness` 写回只降不升；升到 1.00 或终审为 0.00 走 `edit`。不另开新鲜度 skill。
+
+只读召回（explore）：`references/recall.md` 与两份 `query.md` 的「抽词」「组成 keywords」「调用 query」三节保持同文；改抽词时三份一起改。explore 禁止 `freshness` / `edit`。SKILL 本步写明 `--all`，命中之后不按 status/score 丢掉。召回之后一律对照是否仍是现状；作答以结论回答原问，三层依据随后；扩圈是观察，不改三分。
 
 ## 代码读不出来的卡点
 
@@ -22,4 +24,4 @@ agent 的执行规格，编排的唯一位置。改流程只改本目录；改�
 - 原子的增删改查只经 `opencanon`：读用 `query` / `get`（主路径不依赖 `list`），写用 `add` / `edit` / `active` / `delete` / `freshness`。正文以命令信封为准。`opencanon/docs/` 只经 `compose` 写入。skill 把结构化 JSON 交给命令，不让 agent 拼 frontmatter，也不直接读、写、列这些 md。
 - 人审是无法对照时的闸门；body 与代码事实一致则 agent 可代行 `active`，不一致则不入库。skill 把卡点写清楚。
 - 语义判定（是否同一事实、是否仍符合实现）在 agent 调 LLM；opencanon 只召回或给信号。
-- 真源纯度：消费类命令默认只作用于 `active`，除非流程显式纳入 draft。
+- 真源纯度：消费类命令默认只作用于 `active`，除非流程显式纳入非 active。compose 默认只扫 active；explore 显式 `query --all`，非 active 只标明不丢弃。

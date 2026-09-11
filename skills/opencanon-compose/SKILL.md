@@ -2,15 +2,14 @@
 name: opencanon-compose
 description: >-
   Use when the user wants a readable document assembled from canon atoms,
-  compose true-source atoms into prose that answers a question, write into
-  opencanon/docs, or run opencanon-compose — even if they only say "合成一篇可读文档".
-  Do not use for atomize, dedup, or freshness.
+  write into opencanon/docs, or run opencanon-compose — even if they only say
+  "合成一篇可读文档". Do not use for explore, atomize, dedup, or freshness.
 compatibility: Requires the `opencanon` CLI.
 ---
 
 # opencanon-compose
 
-用库中 `active` 原子回答用户的问题，整理成一篇可读文档。原子的增删改查只经 `opencanon`：成员只来自本次 `query` 命中（不够再 `get`）。成文可调语序、写摘要，不得改变原子语义。落盘只经 `opencanon compose` 写入 `opencanon/docs/`。
+用库中 `active` 原子整理成一篇派生可读文档。原子的增删改查只经 `opencanon`：成员只来自本次 `query` 命中（不够再 `get`）。成文可调语序、写摘要，不得改变原子语义。落盘只经 `opencanon compose` 写入 `opencanon/docs/`。
 
 ## 1. 召回
 

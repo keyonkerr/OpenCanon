@@ -4,7 +4,7 @@ description: >-
   Use when the user wants to atomize, split a document, migrate a wiki or
   markdown into canon atoms, ingest a single source of truth, write into
   opencanon, or run opencanon-atomize — even if they only say "split this into
-  the atom library". Do not use for dedup, compose, or freshness.
+  the atom library". Do not use for explore, dedup, compose, or freshness.
 compatibility: Requires the `opencanon` CLI and a structured multiple-choice ask tool.
 ---
 
